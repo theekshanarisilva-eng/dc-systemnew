@@ -13,6 +13,7 @@
             --text: #334155;
             --success: #16a34a;
             --danger: #dc2626;
+            --border: #e2e8f0;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -35,18 +36,64 @@
         }
         h1 { margin: 0; font-size: 24px; }
         p { margin: 5px 0 0 0; opacity: 0.8; }
+        
+        /* Form Styling */
+        .form-section {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+        }
+        .form-section h3 { margin-top: 0; margin-bottom: 15px; color: var(--primary); }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        @media(max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
+        input[type="text"], textarea {
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus { border-color: var(--accent); }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-danger { background: #fee2e2; color: var(--danger); padding: 6px 12px; font-size: 12px; }
+        .btn-danger:hover { background: #fecaca; }
+
         .search-box {
             width: 100%;
             padding: 15px;
             font-size: 16px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--border);
             border-radius: 8px;
             margin-bottom: 25px;
             box-sizing: border-box;
             outline: none;
-            transition: border 0.2s;
         }
         .search-box:focus { border-color: var(--accent); }
+        
+        /* Card Layout */
         .case-card {
             background: var(--card-bg);
             border-left: 5px solid var(--accent);
@@ -54,6 +101,7 @@
             border-radius: 8px;
             margin-bottom: 15px;
             box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+            position: relative;
         }
         .case-header {
             display: flex;
@@ -89,11 +137,12 @@
         }
         .badge-yes { background: #dcfce7; color: var(--success); }
         .badge-no { background: #fee2e2; color: var(--danger); }
+        .card-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+        
         #noResults {
             text-align: center;
             font-size: 16px;
             color: #94a3b8;
-            margin-top: 4px;
             display: none;
         }
     </style>
@@ -103,18 +152,57 @@
 <div class="container">
     <header>
         <h1>Disciplinary Committee Fraud Case Tracking System</h1>
-        <p>Search live database records by DC Number or Accused Name</p>
+        <p>Upload new data records and track ongoing committee actions live</p>
     </header>
 
-    <input type="text" id="searchBar" class="search-box" placeholder="Type case code (e.g., 'a', 'Ap') or officer name...">
+    <!-- NEW INPUT RECORD SYSTEM AREA -->
+    <div class="form-section">
+        <h3>📥 Upload / Update Case Information</h3>
+        <form id="caseForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="formDc">DC Number / Item ID</label>
+                    <input type="text" id="formDc" placeholder="e.g., Ba, c, 52" required>
+                </div>
+                <div class="form-group">
+                    <label for="formName">Accused Employee Name & ID</label>
+                    <input type="text" id="formName" placeholder="e.g., S.A.D.P.C. Samarathunga (9835)" required>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="formUpdate">Latest Update Status</label>
+                    <textarea id="formUpdate" rows="2" placeholder="Describe current status..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="formPending">Actions to be Taken</label>
+                    <textarea id="formPending" rows="2" placeholder="List next deadlines..." required></textarea>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="formCompleted">Actions Completed</label>
+                    <textarea id="formCompleted" rows="2" placeholder="List finished actions..." required></textarea>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="formCeo">
+                    <label for="formCeo">Informed to CEO / Observer Notified</label>
+                </div>
+            </div>
+            <button type="submit" class="btn">Save to System Database</button>
+        </form>
+    </div>
+
+    <!-- LIVE SEARCH BAR -->
+    <input type="text" id="searchBar" class="search-box" placeholder="Type case code or officer name to search instantly...">
 
     <div id="casesContainer"></div>
     <div id="noResults">No records match your search query.</div>
 </div>
 
 <script>
-    // 1. DATA STORE (Your exact records from the uploaded minutes document)
-    const caseDatabase = [
+    // Initial core seed data from your document if local storage is clean
+    const defaultData = [
         {
             dc: "a",
             name: "U.V.S.D.Jayarathne (8230)",
@@ -124,52 +212,28 @@
             ceo: true
         },
         {
-            dc: "b",
-            name: "K.Vijayadhasan (8459)",
-            update: "Escalated to IGP due to lack of local police action. Referred to DIG Nuwara Eliya.",
-            pending: "Follow up with immediate criminal litigation if defense files are withheld.",
-            completed: "Letter dispatched by CLO demanding proof. Status reviewed at July 31st session.",
-            ceo: true
-        },
-        {
-            dc: "c",
-            name: "Sachinthana Piyasena (8231)",
-            update: "Court Case 25/492/3/24 ongoing. Final net recovery balance stands at Rs. 13,822.68.",
-            pending: "Send accounting numbers to CLO through HR via Chethi's validation.",
-            completed: "Settled Rs. 50,200 on Feb 3rd and additional Rs. 50,000 checks on May 13th.",
-            ceo: false
-        },
-        {
-            dc: "z",
-            name: "Pradeep Dissanayake (9278)",
-            update: "Relocated to Gampaha branch closer to home due to health/medical package requests.",
-            pending: "DC panel to formally review structural performance metrics at end of September 2026.",
-            completed: "Official demotion to Portfolio Manager with custom GWP target applied from Aug 1st.",
-            ceo: true
-        },
-        {
             dc: "Ap",
             name: "A.A.C.M. Peiris - Chathura (9953)",
-            update: "Total calculated misappropriation of Rs. 916,490.57 across multiple customer policy loops.",
+            update: "Total calculated misappropriation of Rs. 916,490.57 across multiple loops.",
             pending: "CLO to execute formal criminal branch filing at Cinnamon Gardens Police Station.",
             completed: "Salary locked on July 14th; formal corporate suspension executed by CHRO on July 17th.",
-            ceo: true
-        },
-        {
-            dc: "Am",
-            name: "Asanga Opatha (9354)",
-            update: "Demoted to Manager level. Security/Janitorial wings pulled from portfolio directly into HR.",
-            pending: "Reassign and scale down core administrative task operations under target CFO tracking line.",
-            completed: "Severe multi-count negligence warning issued following formal disciplinary inquiry panel.",
             ceo: true
         }
     ];
 
+    // 1. DATABASE LOADING: Pull records from browser memory, or use defaults
+    let caseDatabase = JSON.parse(localStorage.getItem('dcDatabase'));
+    if (!caseDatabase) {
+        caseDatabase = defaultData;
+        localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
+    }
+
     const container = document.getElementById('casesContainer');
     const searchBar = document.getElementById('searchBar');
     const noResults = document.getElementById('noResults');
+    const caseForm = document.getElementById('caseForm');
 
-    // 2. RENDER ENGINE: Builds visual cards on screen dynamically
+    // 2. RENDER ENGINE: Draw current cases to screen
     function displayCases(data) {
         container.innerHTML = "";
         if (data.length === 0) {
@@ -178,7 +242,7 @@
         }
         noResults.style.display = "none";
         
-        data.forEach(item => {
+        data.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'case-card';
             card.innerHTML = `
@@ -198,33 +262,3 @@
                 </div>
                 <div class="grid">
                     <div>
-                        <div class="field-title">✅ Actions Completed</div>
-                        <div class="field-value">${item.completed}</div>
-                    </div>
-                    <div>
-                        <div class="field-title">💼 Informed to CEO</div>
-                        <div class="field-value">
-                            <span class="badge ${item.ceo ? 'badge-yes' : 'badge-no'}">${item.ceo ? 'YES' : 'NO'}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    // 3. SEARCH ENGINE: Filters text instantly on every keystroke
-    searchBar.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const filtered = caseDatabase.filter(item => 
-            item.dc.toLowerCase().includes(query) || 
-            item.name.toLowerCase().includes(query)
-        );
-        displayCases(filtered);
-    });
-
-    // Initial load execution
-    displayCases(caseDatabase);
-</script>
-</body>
-</html>
