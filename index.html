@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DC Case Tracking System</title>
+    <title>DC Fraud Case Tracking System</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -16,44 +16,39 @@
             --border: #e2e8f0;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             padding: 20px;
         }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1100px; margin: 0 auto; }
         header {
             background-color: var(--primary);
             color: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 12px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        h1 { margin: 0; font-size: 24px; }
-        p { margin: 5px 0 0 0; opacity: 0.8; }
-        
-        /* Form Styling */
+        header h1 { margin: 0; font-size: 24px; }
         .form-section {
             background: var(--card-bg);
             padding: 20px;
             border-radius: 8px;
             border: 1px solid var(--border);
             margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
         }
-        .form-section h3 { margin-top: 0; margin-bottom: 15px; color: var(--primary); }
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 2fr;
             gap: 15px;
             margin-bottom: 15px;
         }
-        @media(max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
         .form-group { display: flex; flex-direction: column; }
         label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
         input[type="text"], textarea {
@@ -62,25 +57,19 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             outline: none;
-            font-family: inherit;
         }
-        input:focus, textarea:focus { border-color: var(--accent); }
         .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
         .btn {
             background: var(--accent);
             color: white;
             border: none;
             padding: 12px 20px;
-            font-size: 14px;
             font-weight: 600;
             border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        .btn:hover { background: #1d4ed8; }
-        .btn-danger { background: #fee2e2; color: var(--danger); padding: 6px 12px; font-size: 12px; }
-        .btn-danger:hover { background: #fecaca; }
-
+        .btn-secondary { background: #475569; padding: 8px 14px; font-size: 13px; }
+        .btn-danger { background: #fee2e2; color: var(--danger); padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; }
         .search-box {
             width: 100%;
             padding: 15px;
@@ -89,11 +78,7 @@
             border-radius: 8px;
             margin-bottom: 25px;
             box-sizing: border-box;
-            outline: none;
         }
-        .search-box:focus { border-color: var(--accent); }
-        
-        /* Card Layout */
         .case-card {
             background: var(--card-bg);
             border-left: 5px solid var(--accent);
@@ -101,7 +86,6 @@
             border-radius: 8px;
             margin-bottom: 15px;
             box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
-            position: relative;
         }
         .case-header {
             display: flex;
@@ -117,148 +101,164 @@
             padding: 4px 10px;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 14px;
         }
         .accused-name { font-size: 18px; font-weight: 600; margin: 0; }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .field-title { font-weight: bold; font-size: 13px; color: #64748b; text-transform: uppercase; }
-        .field-value { font-size: 15px; margin-top: 2px; }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .field-title { font-weight: bold; font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .field-value { font-size: 14px; margin-top: 2px; line-height: 1.4; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .badge-yes { background: #dcfce7; color: var(--success); }
         .badge-no { background: #fee2e2; color: var(--danger); }
-        .card-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
-        
-        #noResults {
-            text-align: center;
-            font-size: 16px;
-            color: #94a3b8;
-            display: none;
-        }
+        .card-actions { display: flex; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+        #noResults { text-align: center; font-size: 16px; color: #94a3b8; padding: 40px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Disciplinary Committee Fraud Case Tracking System</h1>
-        <p>Upload new data records and track ongoing committee actions live</p>
+        <div>
+            <h1>Disciplinary Committee Fraud Case Tracking System</h1>
+            <p>Comprehensive Data Registry & Live Executive Dashboard</p>
+        </div>
+        <button class="btn btn-secondary" onclick="restoreDefaults()">🔄 Reload Document Records</button>
     </header>
 
-    <!-- NEW INPUT RECORD SYSTEM AREA -->
     <div class="form-section">
-        <h3>📥 Upload / Update Case Information</h3>
+        <h3>📥 Upload New Case or Log Update</h3>
         <form id="caseForm">
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="formDc">DC Number / Item ID</label>
-                    <input type="text" id="formDc" placeholder="e.g., Ba, c, 52" required>
+                    <label>DC Item ID / Case Key</label>
+                    <input type="text" id="formDc" required>
                 </div>
                 <div class="form-group">
-                    <label for="formName">Accused Employee Name & ID</label>
-                    <input type="text" id="formName" placeholder="e.g., S.A.D.P.C. Samarathunga (9835)" required>
-                </div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="formUpdate">Latest Update Status</label>
-                    <textarea id="formUpdate" rows="2" placeholder="Describe current status..." required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="formPending">Actions to be Taken</label>
-                    <textarea id="formPending" rows="2" placeholder="List next deadlines..." required></textarea>
+                    <label>Accused Employee Details & ID</label>
+                    <input type="text" id="formName" required>
                 </div>
             </div>
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="formCompleted">Actions Completed</label>
-                    <textarea id="formCompleted" rows="2" placeholder="List finished actions..." required></textarea>
+                    <label>Latest Update Status</label>
+                    <textarea id="formUpdate" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Actions to be Taken / Next Deadlines</label>
+                    <textarea id="formPending" rows="2" required></textarea>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Actions Completed</label>
+                    <textarea id="formCompleted" rows="2" required></textarea>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="formCeo">
-                    <label for="formCeo">Informed to CEO / Observer Notified</label>
+                    <label for="formCeo">Informed to CEO / Audited by Board</label>
                 </div>
             </div>
-            <button type="submit" class="btn">Save to System Database</button>
+            <button type="submit" class="btn">Save to Active Database</button>
         </form>
     </div>
 
-    <!-- LIVE SEARCH BAR -->
-    <input type="text" id="searchBar" class="search-box" placeholder="Type case code or officer name to search instantly...">
+    <input type="text" id="searchBar" class="search-box" placeholder="Type Case Key, Employee Name, ID, or Branch location to filter instantly...">
 
     <div id="casesContainer"></div>
-    <div id="noResults">No records match your search query.</div>
+    <div id="noResults">No records match your tracking query.</div>
 </div>
 
 <script>
-    // Initial core seed data from your document if local storage is clean
-    const defaultData = [
-        {
-            dc: "a",
-            name: "U.V.S.D.Jayarathne (8230)",
-            update: "Transferred to In Progress. Bike reversed to Company asset to settle debt.",
-            pending: "Get final confirmation on operational closure for CLO.",
-            completed: "CLO sent case closure request to HIA on 7th May; resent by CHRO on 24th July 2026.",
-            ceo: true
-        },
-        {
-            dc: "Ap",
-            name: "A.A.C.M. Peiris - Chathura (9953)",
-            update: "Total calculated misappropriation of Rs. 916,490.57 across multiple loops.",
-            pending: "CLO to execute formal criminal branch filing at Cinnamon Gardens Police Station.",
-            completed: "Salary locked on July 14th; formal corporate suspension executed by CHRO on July 17th.",
-            ceo: true
-        }
-    ];
-
-    // 1. DATABASE LOADING: Pull records from browser memory, or use defaults
-    let caseDatabase = JSON.parse(localStorage.getItem('dcDatabase'));
-    if (!caseDatabase) {
-        caseDatabase = defaultData;
-        localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
-    }
-
-    const container = document.getElementById('casesContainer');
-    const searchBar = document.getElementById('searchBar');
-    const noResults = document.getElementById('noResults');
-    const caseForm = document.getElementById('caseForm');
-
-    // 2. RENDER ENGINE: Draw current cases to screen
-    function displayCases(data) {
-        container.innerHTML = "";
-        if (data.length === 0) {
-            noResults.style.display = "block";
-            return;
-        }
-        noResults.style.display = "none";
-        
-        data.forEach((item, index) => {
-            const card = document.createElement('div');
-            card.className = 'case-card';
-            card.innerHTML = `
-                <div class="case-header">
-                    <p class="accused-name">👤 ${item.name}</p>
-                    <span class="dc-num">DC: ${item.dc}</span>
-                </div>
-                <div class="grid">
-                    <div>
-                        <div class="field-title">📈 Latest Update</div>
-                        <div class="field-value">${item.update}</div>
-                    </div>
-                    <div>
-                        <div class="field-title">⚠️ Actions to be Taken</div>
-                        <div class="field-value">${item.pending}</div>
-                    </div>
-                </div>
-                <div class="grid">
-                    <div>
+    const documentSeedData = [
+        { dc: "a", name: "U.V.S.D.Jayarathne (8230)", update: "Transferred from 'closure' to 'in progress'. Bike taken as Company asset.", pending: "Get confirmation on closure of this case for CLO.", completed: "CLO sent request to HIA on 7th May 2026; resent on 24th July 2026.", ceo: true },
+        { dc: "b", name: "K.Vijayadhasan (8459) - Hatton Branch", update: "Escalated to IGP due to local police inaction. Colombo DIC referred to DIG Nuwara Eliya.", pending: "Follow up with criminal prosecution if documents are withheld.", completed: "CLO issued demand warning. Status reviewed on 31st July 2026.", ceo: true },
+        { dc: "c", name: "Sachinthana Piyasena (8231) - Rathnapura SSO", update: "Court Case 25/492/3/24 active. Net outstanding balance is Rs. 13,822.68.", pending: "Send verified financial details to CLO via HR.", completed: "Deducted Rs. 110,975 from gratuity. Recovered Rs. 50,200 and Rs. 50,000.", ceo: false },
+        { dc: "d", name: "N K Dineth Sachitha (8764)", update: "Resignation processed on 30th Jan 2026. Exit clearance checked with zero outstanding.", pending: "CLO to deliver formal BAC minutes to close file.", completed: "Promoter code removed. Forwarded to BAC by HIA on 27th July 2026.", ceo: true },
+        { dc: "e", name: "A.R.T Silva (8581)", update: "Employee and family left the country. Coordinates unknown.", pending: "CLO to deliver BAC minutes to execute write-off closure.", completed: "Internal Audit recommended closure in March 2026 review loop.", ceo: false },
+        { dc: "f", name: "HTP Sandaruwan - Embilipitiya Regional Branch", update: "Suspected fraudulent claim. Accident photos match MBSL system.", pending: "CLO to send outstanding amount and legal opinion in writing to DC.", completed: "Preliminary review finished. Extended until 7th August 2026.", ceo: false },
+        { dc: "h", name: "M R K Jayarathna (9592) - Kosala", update: "Placed client business under broker code without authorization.", pending: "Case closed. Record kept for history logging.", completed: "Warning letter issued. Resignation executed on 4th July 2026.", ceo: false },
+        { dc: "o", name: "Resigned Employees (24 Staff) - Missing Tabs", update: "Separated staff left without completing clearance or returning tabs.", pending: "Asanga failed to deliver net book values to Finance by July 24.", completed: "CHRO dispatched Letters of Demand (LOD) via registered post on 30th April 2026.", ceo: false },
+        { dc: "j", name: "A.D.K.N. Dasanayaka (800216) - Kuliyapitiya", update: "Premium misappropriation scan on cancelled loops (Rs. 40,109 outstanding).", pending: "CLO to update DC about the ongoing legal recovery actions.", completed: "Held Rs. 10,142 from March salary. Files sent to legal on 29th May 2026.", ceo: false },
+        { dc: "L", name: "W.A.K.D. Karunarathna (9182) Kanishka", update: "Returned policy cheques loop. All pending amounts fully settled.", pending: "Case set for file archiving.", completed: "Finance confirmed all premiums set off via excess premium allocation.", ceo: false },
+        { dc: "M", name: "Thilina Thennakoon (8517) - Pilimathalawa RB", update: "Malpractice profiting from repairer arrangement. Dues fully recovered.", pending: "CLO to update DC on final Audit Committee approval.", completed: "Recovered via 3 monthly deductions of Rs. 9,833. Moved to GL 270.", ceo: false },
+{ dc: "n", name: "Asanga Opatha (9354) - Negligence Case 1", update: "Procured 2000 memo cubes (Rs. 1,440,000) without budget or OMC approval.", pending: "Follow guidelines for administrative procurements.", completed: "Inquiry held 14th May 2026. Severe warning letter issued on 15th May 2026.", ceo: true },
+{ dc: "q", name: "Asanga Opatha (9354) - Negligence Case 2", update: "Professional dispute and arranging separate location for PI staff at Melisiripura.", pending: "Maintain corporate alignment across branch offices.", completed: "Inquiry conducted 24th April. Factored into severe warning file.", ceo: false },
+{ dc: "S", name: "Asanga Opatha (9354) - Negligence Case 3", update: "iPad internet connection failure for Director, blocking BoardPAC papers.", pending: "Ensure connectivity setups are checked and stable at all times.", completed: "CEO ordered DC investigation to identify process gaps.", ceo: true },
+{ dc: "t", name: "Asanga Opatha (9354) - Negligence Case 4", update: "Submitted Fixed Asset Disposal list containing working equipment without check.", pending: "Ensure inter-departmental verification is strictly followed.", completed: "Show-cause letter issued on 30th April 2026.", ceo: false },
+{ dc: "T", name: "R. E. Prasly (9733) & Chanuka Dharmarathna (800037)", update: "Workmen compensation cheque receipted to completely wrong policies.", pending: "CLO tracking execution on LODs sent to resigned staff.", completed: "LOD sent to Prasly. Finance verified no outstanding balances remain.", ceo: false },
+{ dc: "u", name: "Asanga Opatha (9354) - Negligence Case 5", update: "Failed to arrange Rs. 120,000 payment to Feather Print, delaying work.", pending: "Resolve pending administration department backlogs.", completed: "Forwarded by CEO to DC committee for quick resolution on 29th April 2026.", ceo: true },
+{ dc: "v", name: "Asanga Opatha (9354) - Negligence Case 6", update: "Pending advance settlements for Malsiripura partition job unresolved.", pending: "Reconcile advance balances with Finance records.", completed: "CFO lodged formal complaint to DC committee on 29th April 2026.", ceo: false },
+{ dc: "w", name: "W.A.D.K. Wijesinghe (8304) - Kurunegala Acting BM", update: "Placed Assetline business under Brilliance code for commission goals.", pending: "Review active policy codes across the regional branch network.", completed: "One-month bonus withheld. Caution letter issued on 8th July 2026.", ceo: true },
+{ dc: "y", name: "Asanga Opatha (9354) - Negligence Case 7", update: "Broken chairs issue: Failed to submit new chair proposal to OMC.", pending: "Review timeline response for second show-cause notice.", completed: "Show caused on July 11 for counts 7-15. Granted 14-day extension.", ceo: true },
+{ dc: "z", name: "Pradeep Dissanayake (9278) - Gampaha ZM", update: "Continuous failure to meet targets. Relocated to Gampaha Branch.", pending: "DC to review arrangement progress at the end of September 2026.", completed: "Demoted to Portfolio Manager from ZM effective 1 August 2026.", ceo: false },
+{ dc: "Aa", name: "U.H.J.S. Uduwaka (800421) - Nawalapitiya", update: "Forged insurance cards. Premium misappropriation of Rs. 150,000.", pending: "Review new complaint dossier filed on 17th August 2026.", completed: "System access and HRIS account cancelled on 24th August 2026.", ceo: false },
+{ dc: "Ap", name: "A.A.C.M. Peiris - Chathura (9953)", update: "Massive premium rolling fraud across 14 policies totaling Rs. 916,490.57.", pending: "CLO to initiate case entry at Cinnamon Gardens Police Station.", completed: "Suspended on 17th July. Missed final recovery deadline on Aug 19, 2026.", ceo: true },
+{ dc: "Ar", name: "Dilum Pathirana (9950) - Nugegoda BM", update: "Rolled customer premium checks to block cancellation loops.", pending: "CHRO to hold Dilum's increments and promotions for year 2026.", completed: "Dilum paid back full Rs. 82,489.94. Policy reinstated July 24, 2026.", ceo: false },
+{ dc: "As", name: "M.L.A.I.H. Molligoda (8160)", update: "Defaulted on vehicle loans. Vacated post owing LKR 2,139,383.", pending: "CLO to initiate recovery lawsuit before end of August 2026.", completed: "Field investigations completed. Original CRs title checked July 31, 2026.", ceo: false },
+{ dc: "Am", name: "Asanga Opatha (9354) - Final Decision", update: "Established multi-count operational negligence and internal failure.", pending: "Enforce direct reporting and tracking under CFO workspace.", completed: "Demoted to Manager Administration on Aug 1st. Security/Janitorial stripped.", ceo: true }
+];
+let caseDatabase = JSON.parse(localStorage.getItem('dcDatabase'));
+if (!caseDatabase || caseDatabase.length < 5) {
+caseDatabase = documentSeedData;
+localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
+}
+const container = document.getElementById('casesContainer');
+const searchBar = document.getElementById('searchBar');
+const noResults = document.getElementById('noResults');
+const caseForm = document.getElementById('caseForm');
+function displayCases(data) {
+container.innerHTML = "";
+if (data.length === 0) {
+noResults.style.display = "block";
+return;
+}
+noResults.style.display = "none";
+data.forEach((item, index) => {
+const card = document.createElement('div');
+card.className = 'case-card';
+card.innerHTML = <div class="case-header"> <p class="accused-name">👤 ${item.name}</p> <span class="dc-num">Key ID: ${item.dc}</span> </div> <div class="grid"> <div> <div class="field-title">📈 Latest Update Status</div> <div class="field-value">${item.update}</div> </div> <div> <div class="field-title">⚠️ Actions to be Taken</div> <div class="field-value">${item.pending}</div> </div> </div> <div class="grid"> <div> <div class="field-title">✅ Actions Completed</div> <div class="field-value">${item.completed}</div> </div> <div> <div class="field-title">💼 Informed to CEO / Audited</div> <div class="field-value"> <span class="badge ${item.ceo ? 'badge-yes' : 'badge-no'}">${item.ceo ? 'YES / VERIFIED' : 'NO / PENDING'}</span> </div> </div> </div> <div class="card-actions"> <button class="btn-danger" onclick="deleteCase(${index})">Remove Case Record</button> </div>;
+container.appendChild(card);
+});
+}
+caseForm.addEventListener('submit', (e) => {
+e.preventDefault();
+const newCase = {
+dc: document.getElementById('formDc').value,
+name: document.getElementById('formName').value,
+update: document.getElementById('formUpdate').value,
+pending: document.getElementById('formPending').value,
+completed: document.getElementById('formCompleted').value,
+ceo: document.getElementById('formCeo').checked
+};
+caseDatabase.unshift(newCase);
+localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
+caseForm.reset();
+displayCases(caseDatabase);
+searchBar.value = "";
+});
+window.deleteCase = function(index) {
+if(confirm("Purge this record from tracking memory?")) {
+caseDatabase.splice(index, 1);
+localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
+displayCases(caseDatabase);
+}
+}
+window.restoreDefaults = function() {
+if(confirm("Reload the base records from the text document?")) {
+localStorage.removeItem('dcDatabase');
+caseDatabase = documentSeedData;
+localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
+displayCases(caseDatabase);
+searchBar.value = "";
+alert("Database re-seeded!");
+}
+}
+searchBar.addEventListener('input', (e) => {
+const query = e.target.value.toLowerCase();
+const filtered = caseDatabase.filter(item =>
+item.dc.toLowerCase().includes(query) ||
+item.name.toLowerCase().includes(query) ||
+item.update.toLowerCase().includes(query)
+);
+displayCases(filtered);
+});
+displayCases(caseDatabase);
