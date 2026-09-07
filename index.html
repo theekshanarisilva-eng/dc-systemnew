@@ -1,183 +1,155 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DC Fraud Case Tracking System</title>
-    <style>
-        :root { --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --card-bg: #ffffff; --text: #334155; --success: #16a34a; --danger: #dc2626; --warning: #ea580c; --border: #e2e8f0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1150px; margin: 0 auto; }
-        header { background-color: var(--primary); color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-        header h1 { margin: 0; font-size: 24px; }
-        .form-section { background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 25px; transition: border 0.3s; }
-        .form-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px; }
-        .form-group { display: flex; flex-direction: column; }
-        label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
-        input[type="text"], textarea { padding: 10px; font-size: 14px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-family: inherit; }
-        input:focus, textarea:focus { border-color: var(--accent); }
-        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
-        .btn { background: var(--accent); color: white; border: none; padding: 12px 20px; font-weight: 600; border-radius: 6px; cursor: pointer; }
-        .btn-secondary { background: #475569; padding: 8px 14px; font-size: 13px; }
-        .btn-danger { background: #fee2e2; color: var(--danger); padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; }
-        .search-box { width: 100%; padding: 15px; font-size: 16px; border: 2px solid var(--border); border-radius: 8px; margin-bottom: 25px; box-sizing: border-box; }
-        .case-card { background: var(--card-bg); border-left: 5px solid var(--accent); padding: 20px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
-        .case-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
-        .dc-num { background: #dbeafe; color: var(--accent); padding: 4px 10px; border-radius: 6px; font-weight: bold; }
-        .accused-name { font-size: 18px; font-weight: 600; margin: 0; color: var(--primary); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .field-title { font-weight: bold; font-size: 12px; color: #64748b; text-transform: uppercase; }
-        .field-value { font-size: 14px; margin-top: 2px; line-height: 1.45; white-space: pre-line; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-yes { background: #dcfce7; color: var(--success); }
-        .badge-no { background: #fee2e2; color: var(--danger); }
-        .card-actions { display: flex; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 10px; gap: 10px; }
-        #noResults { text-align: center; font-size: 16px; color: #94a3b8; padding: 40px; display: none; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <header>
-        <div>
-            <h1>Disciplinary Committee Fraud Case Tracking System</h1>
-            <p>Smart Add & Update Dashboard (Full Archive History Included)</p>
-        </div>
-        <button class="btn btn-secondary" onclick="restoreDefaults()">🔄 Reload Master Document Records</button>
-    </header>
+import streamlit as st
 
-    <!-- SMART FORM ENGINE -->
-    <div class="form-section" id="formWrapper">
-        <h3 id="formTitle">📥 Add New Case or Update Existing (Enter Matching Case ID)</h3>
-        <form id="caseForm">
-            <div class="form-grid">
-                <div class="form-group"><label>Case ID / DC Number Key</label><input type="text" id="formDc" placeholder="e.g., a, b, Ap, An, Ao" required></div>
-                <div class="form-group"><label>Accused Employee Details & ID</label><input type="text" id="formName" placeholder="Employee Name (ID) - Branch" required></div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group"><label>Latest Update Status</label><textarea id="formUpdate" rows="2" required></textarea></div>
-                <div class="form-group"><label>Actions to be Taken / Next Deadlines</label><textarea id="formPending" rows="2" required></textarea></div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group"><label>Actions Completed (Full History Log / Done Area)</label><textarea id="formCompleted" rows="4" required></textarea></div>
-                <div class="checkbox-group"><input type="checkbox" id="formCeo"><label for="formCeo">Informed to CEO</label></div>
-            </div>
-            <button type="submit" class="btn" id="submitBtn">Save Changes to Database</button>
-        </form>
-    </div>
+# Set up page configurations
+st.set_page_config(page_title="Disciplinary Case Management System", layout="wide")
 
-    <input type="text" id="searchBar" class="search-box" placeholder="Type Case Key, Employee Name, ID, or Branch location to filter instantly...">
-    <div id="casesContainer"></div>
-    <div id="noResults">No records match your tracking query.</div>
-</div>
+st.title("⚖️ PIL Disciplinary Case Management System")
+st.write("Record and track employee disciplinary cases according to company procedure.")
 
-<script>
-    // FULL PACKED UNBROKEN DATA ENGINE WITH ALL EXTENDED MINUTES RECORDS PAST CASE AM
-const rawCompressedMatrix = "W3siZGMiOiJhIiwibmFtZSI6IlUuVi5TLkQuSmF5YXJhdGhuZSAoODIzMCkiLCJ1cGRhdGUiOiJUcmFuc2ZlcnJlZCBmcm9tICdjbG9zdXJlJyB0byAnbiBwcm9ncmVzcycuIEJpa2UgdGFrZW4gYXMgQ29tcGFueSBhc3NldC4iLCJwZW5kaW5nIjoiR2V0IGNvbmZpcm1hdGlvbiBvbiBjbG9zdXJlIGZvciBDTE8uIiwiY29tcGxldGVkIjoiLSBEQyBzb3VnaHQgQkFDIHJlY29tbWVuZGF0aW9uIGZvbGxvd2VkIGJ5IEJvYXJkIGFwcHJvdmFsLlxuLSBPYnRhaW5lZCByZS12YWx1YXRpb24gZnJvbSBBZG1pbiBEZXB0LiBEQyB0b29rIHdyb25nIGRlY2lzaW9uIHRvIGRvIHJlLXZhbHVhdGlvbiB3aGljaCB3YXMgcmV2ZXJzZWQuXG4tIEZpbmFsIGRlY2lzaW9uIHdhcyB0byBjbG9zZSB0aGUgY2FzZSBhbmQgc2VuZCBldmlkZW5jZSB0byBISUEuXG4tIENMTyBzZW50IGNvbW11bmljYXRpb24gdG8gSElBIG9uIDd0aCBNYXkgMjAyNi5cbi0gUmVzZW50IGNsb3N1cmUgcmVxdWVzdCB0byBISUEgb24gMjR0aCBKdWx5IDIwMjYgYnkgQ0hSTy4iLCJjZW8iOnRydWV9LHsiZGMiOiJiIiwibmFtZSI6IksuVmlqYXlhZGhhc2FuICg4NDU5KSAtIEhhdHRvbiIsInVwZGF0ZSI6Ik1hdHRlciBlc2NhbGF0ZWQgdG8gSUdQIGR1ZSB0byBIYXR0b24gcG9saWNlIGluYWN0aW9uLiIsInBlbmRpbmciOiJDTE8gdG8gZm9sbG93IHVwIHdpdGggY3JpbWluYWwgYWN0aW9uIGlmIGRvY3VtZW50cyBhcmUgbm90IHN1Ym1pdHRlZC4iLCJjb21wbGV0ZWQiOiItIEludmVzdGlnYXRvciB2aXNpdGVkIFZpamF5YXRoYXNhbi4gTGV0dGVyIHNlbnQgYnkgQ0xPIGFza2luZyBmb3IgZG9jdW1lbnRzLlxuLSBPbiA4dGggQXByaWwsIENMTyB1cGRhdGVkIERDIHRoYXQgaGUgaGFzIHNlbnQgYSByZW1pbmRlciB0byBJR1AuXG4tIE9uIDExdGggSnVuZSAyMDI2LCBDTE8gdXBkYXRlZCB0aGF0IERJQyBvZmZpY2VyIGF0IENvbG9tYm8gcmVmZXJyZWQgbWF0dGVyIHRvIERJRyBhdCBOdXdhcmEgRWxpeWEuXG4tIE9uIDMxc3QgSnVseSAyMDI2LCBzdGF0dXMgcmVtYWlucyBzYW1lLiIsImNlb3I6dHJ1ZX0seyJkYyI6ImMiLCJuYW1lIjoiU2FjaGludGhhbmEgUGl5YXNlbmEgLSA4MjMxIiwidXBkYXRlIjoiQ291cnQgY2FzZSBubyAyNS80OTIvMy8yNCBmb3IgcmVjb3ZlcnkgYmFsYW5jZS4gRmluYWwgTmV0IE91dHN0YW5kaW5nIGlzIFJzLiAxMyw4MjIuNjguIiwicGVuZGluZyI6IkdldCBjb25maXJtYXRpb24gaW4gd3JpdGluZyBmcm9tIENoZXRoaSBhYm91dCByZW1haW5pbmcgYmFsYW5jZSBhbmQgc2VuZCBkZXRhaWxzIHRvIENMTy4iLCJjb21wbGV0ZWQiOiItIEdyYXR1aXR5IGRlZHVjdGVkIFJzLiAxMTAsOTc1LjAwLlxuLSBDaGVja2VkIHdpdGggQ29udGFjdCBDZW50cmUsIGN1c3RvbWVyIE1yLiBLb3Nnb2RhIGNvbmZpcm1lZCBtb25leSBnaXZlbiB0byBTYWNoaW50aGFuYS5cbi0gU2FjaGludGhhbmEgcGFpZCBScy4gNTAsMjAwIG9uIDNyZCBGZWIgMjAyNi5cbi0gU2FjaGludGhhbmEgZGlkIG5vdCBhdHRlbmQgY291cnQ7IHdhcnJhbnQgaXNzdWVkIHRocm91Z2ggUG9saWNlIE5pdml0aGlnYWxhLlxuLSBQYWlkIFJzLiAxMCwwMDAgYW5kIFJzLiA0MCwwMDAgb24gMTNyZCBNYXkgMjAyNi5cbi0gT24gMm5kIEp1bmUgMjAyNiwgRmluYW5jZSBjb25maXJtZWQgTXVuYXNpbmdoZSdzIHBheW1lbnQgZnVsbHkgc2V0dGxlZC4iLCJjZW8iOmZhbHNlfSx7ImRjIjoiZCIsIm5hbWUiOiJOIEsgRGluZXRoIFNhY2hpdGhhIC0gODc2NCIsInVwZGF0ZSI6IkNvbnNpZGVyZWQgYXMgY2xvc3VyZSBvZiB0aGUgY2FzZS4iLCJwZW5kaW5nIjoiQ0xPIHRvIGdpdmUgQkFDIG1pbnV0ZSBmb3IgY2xvc2luZyB0aGlzIGNhc2UuIiwiY29tcGxldGVkIjoiLSBDRU8gYWR2aXNlZCB0byByZW1vdmUgYnVzaW5lc3MgcHJvbW90ZXIgY29kZS5cbi0gQWdyZWVkIHRvIGhvbGQgc2FsYXJ5LCBzdXNwZW5kIHdvcmsgYW5kIGNhbGxlZCBmb3IgaW5xdWlyeS5cbi0gVGVuZGVyZWQgcmVzaWduaXRpb24gb24gMzB0aCBKYW4gMjAyNi5cbi0gREMgZGVjaWRlZCB0byBleGl0IGNsZWFyYW5jZSBhbmQgZm9yd2FyZCBldmlkZW5jZSB0byBISUEuXG4tIEhJQSBjb25maXJtZWQgb24gMjNyZCBKdWx5IDIwMjYgdGhpcyB3aWxsIGJlIGZvcndhcmRlZCB0byBCQUMgYnkgMjd0aCBKdWx5IDIwMjYuIiwiY2VvIjp0cnVlfSx7ImRjIjoiZSIsIm5hbWUiOiJBLlIuVC4gU2lsdmEgKDg1ODEpIiwidXBkYXRlIjoiTm8gY2l2aWwgbGl0aWdhdGlvbiBhdmFpbGFibGUgZHVlIHRvIHVua25vd24gYWRkcmVzcy4iLCJwZW5kaW5nIjoiQ0xPIHRvIGdpdmUgQkFDIG1pbnV0ZSBmb3IgY2xvc2luZyB0aGlzIGNhc2UuIiwiY29tcGxldGVkIjoiLSBNaXNhcHByb3ByaWF0aW9uIG9mIHBob25lIGxpbmVzIGZvciBvdmVyc2VhcyBjYWxscyAoUnMuIDExMiwwNjEuNjApLlxuLSBDTE8gc3VibWl0dGVkIHdyaXR0ZW4gc3RhdGVtZW50IHRoYXQgZW1wbG95ZWUgYW5kIGZhbWlseSBhcmUgbm90IGluIHRoZSBjb3VudHJ5LlxuLSBPbiAxMHRoIEFwcmlsLCBISUEgcmVjb21tZW5kZWQgZm9yIGNsb3N1cmUgaW4gbW9udGhseSBpbnRlcm5hbCBhdWRpdCByZXZpZXcuIiwiY2VvIjpmYWxzZX0seyJkYyI6ImYiLCJuYW1lIjoiSFRQIFNhbmRhcnV3YW4gLSA5OTI0IiwidXBkYXRlIjoiRXh0ZW5kZWQgZGVhZGxpbmUgdW50aWwgN3RoIEF1Z3VzdCAyMDI2LiIsInBlbmRpbmciOiJDTE8gdG8gc2VuZCBvdXRzdGFuZGluZyBhbW91bnQgYW5kIGxlZ2FsIG9waW5pb24gaW4gd3JpdGluZyB0byBEQy4iLCJjb21wbGV0ZWQiOiItIENvbXBsYWludCBtYWRlIGJ5IE1zLiBUaHVzaGFyaSBvbiAxM3JlIEZlYiAyMDI2IHJlZ2FyZGluZyBzdXNwZWN0ZWQgZnJhdWR1bGVudCBtb3RvciBjbGFpbS5cbi0gT2JzZXJ2ZWQgdGhhdCBNQlNMIGNsYWltIGhhZCBiZWVuIHJlamVjdGVkIGFuZCBkYW1hZ2VzIGFyZSBpZGVudGljYWwuXG4tIE9uIDI1dGggTWF5IDIwMjYsIENMTyB1cGRhdGVkIGFib3V0IHBvc3NpYmlsaXR5IG9mIFBvbGljZSBDb21wbGFpbnQuIFVuZGVyd3JpdGVyIG9idGFpbmVkIHBpY3R1cmVzIHRocm91Z2ggcGVyc29uYWwgY29udGFjdCwgc28gd2UgY2Fubm90IGRpc2Nsb3NlIGRpc2NvdmVyeSB0byBQb2xpY2UuIiwiY29tcGxldGVkIjpmYWxzZX0seyJkYyI6ImgiLCJuYW1lIjoiTSBSIEsgSkFZQVJBVEhOQSAvIDk1OTIiLCJ1cGRhdGUiOiJDYXNlIGNsb3NlZC4iLCJwZW5kaW5nIjoiTm9uZSAoY2FzZSBjbG9zZWQpLiIsImNvbXBsZXRlZCI6Ii0gQ3VzdG9tZXIgYWxsZWdlZCBwb2xpY3kgd2FzIHBsYWNlZCB3aXRoIGJyb2tlciB3aXRob3V0IGNvbnNlbnQuXG4tIDEwdGggQXByaWwgMjAyNiwgd2FybmluZyBsZXR0ZXIgaXNzdWVkIGFuZCBhZHZpc2VkIGNvbXBhbnkgd2lsbCBub3QgYWNjZXB0IGJ1c2luZXNzZXMgdW5kZXIgYnJva2VyIGNvZGUuXG4tIE9mZmljZXIgdGVuZGVyZWQgcmVzaWduaXRpb24gdy5lLmYgNHRoIEp1bHkgMjAyNi5cbi0gREMgZGVjaWRlZCB0byBjbG9zZSB0aGUgY2FzZSBvbiA5dGggSnVuZSAyMDI2IGFuZCBpbmZvcm1lZCBISUEuIiwiY2VvIjpmYWxzZX0seyJkYyI6Im8iLCJuYW1lIjoiUmVzaWduZWQgRW1wbG95ZWVzICgyNCBub3MpIC0gTWlzc2luZyBUYWJzIiwidXBkYXRlIjoiQ29uc2lkZXJlZCBhcyBwcm9mZXNzaW9uYWwgbmVnbGlnZW5jZSBvZiBBc2FuZ2UgdW5kZXIgbm8gMTEuIiwicGVuZGluZyI6IkFzYW5nYSB0byBnZXQgbmV0IGJvb2sgdmFsdWUgYnkgcHJvdmlkaW5nIGFzc2V0IGRldGFpbHMgdG8gRmluYW5jZS4iLCJjb21wbGV0ZWQiOiItIEhSIERlcHQgY29uZmlybWVkIHJlc2lnbmVkIGVtcGxveWVlcyBoYXZlIG5vdCBjb21wbGV0ZWQgY2xlYXJhbmNlLlxuLSBDSFJPIGFycmFuZ2VkIExPRHMgdG8gdGhvc2UgcmVzaWduZWQgZW1wbG95ZWVzIG9uIDMwdGggQXByaWwgMjAyNi5cbi0gSVQgRGVwdCBjb25maXJtZWQgbm8gc3lzdGVtIHdhcyBpbnN0YWxsbWVkIGluIHRhYnMgYW5kIHRoZXkgYXJlIG91dCBvZiBtYXJrZXQuXG4tIE9uIDl0aCBKdW5lIDIwMjYsIERDIGFkdmlzZWQgQXNhbmdhIHRvIGdldCBuZXQgYm9vayB2YWx1ZSwgYnV0IHRoaXMgd2FzIG5vdCBkb25lIGJ5IDI0dGggSnVseSAyMDI2LiIsImNlb3I6bm90ZX0seyJkYyI6ImoiLCJuYW1lIjoiQS5ELksuTi4gRGFzYW5heWFrYSAtIDgwMDIxNiIsInVwZGF0ZSI6IkNMTyB0byBjaGVjayBhbmQgY29uZmlybWVkIHRvIERDIG9uIDNyZCBBdWd1c3QgMjAyNi4iLCJwZW5kaW5nIjoiQ0xPIHRvIHVwZGF0ZSB0aGUgREMgYWJvdXQgbGVnYWwgYWN0aW9uLiIsIGNvbXBsZXRlZCI6Ii0gSWRlbnRpZmllZCBwb2xpY2llcyBtaXNhcHByb3ByaWF0ZWQgYnkgcmVzaWduZWQgc2FsZXMgb2ZmaWNlci5cbi0gMTB0aCBBcHJpbCAyMDI2LCBEQyBjaGVja2VkIGNhbmNlbGxldGlvbiBhbmQgcHJlbWl1bSBwYXltZW50cy5cbi0gQ0hSTyBjb25maXJtZWQgb24gMTZ0aCBBcHJpbCAyMDI2IHRoYXQgUnMuIDEwLDE0Mi4wNiBoYXMgYmVlbiBoZWxkIGZyb20gTWFyY2ggc2FsYXJ5LlxuLSBIUiBhcnJhbmdlZCBjYWxsIHJlY29yZHMgZGV0YWlscyB0byBDTE8uIFRvdGFsIG1pc2FwcHJvcHJpYXRlZCBpcyBScy4gNDAsMTA5LjAwLlxuLSBQZXJzb25hbCBmaWxlIGdpdmVuIHRvIENMTyBvbiAyOXRoIE1heSAyMDI2LiIsImNlb3I6ZmFsc2V9LHsiZGMiOiJMIiwibmFtZSI6IlcuQS5LLkQuIEthcnVuYXJhdGhuYSAoOTE4MikiLCJ1cGRhdGU6IkNMTyBpbmZvcm1lZCBISUEgYnkgMTl0aCBNYXkgMjAyNiBmb3IgY2xvc3VyZSBvZiB0aGUgY2FzZS4iLCJwZW5kaW5nIjoiQ0xPIHRvIHVwZGF0ZSBEQyBvbiA5dGggSnVseSAyMDI2LiIsImNvbXBsZXRlZCI6Ii0gQ29tcGxhaW50IHRoYXQgY2hlcXVlcyB3ZXJlIGlzc3VlZCBieSBLYW5pc2hrYSBhbmQgcmV0dXJuZWQgbGF0ZXIuXG4tIFBlbmRpbmdYW1vdW50cyBmdWxseSBzZXR0bGVkLiBDTE8gc3VibWl0dGVkIGRvY3VtZW50cyB0byBISUEuIiwiY2VvIjpmYWxzZX0seyJkYyI6Ik0iLCJuYW1lIjoiVGhpbGluYSBUaGVubmFrb29uIChBOTUxNykiLCJ1cGRhdGU6IkNMTyB0byB1cGRhdGUgREMgb24gQXVkaXQgQ29tbWl0dGVlIGRlY2lzaW9uLiIsInBlbmRpbmciOiJHZXQgZmluYWwgQXVkaXQgQ29tbWl0dGVlIGFwcHJvdmFsLiIsImNvbXBsZXRlZCI6Ii0gQ3VzdG9tZXIgY29tcGxhaW50IGFib3V0IGEgcmVwYWlyZWQsIG5vdCByZXBsYWNlZCwgYWxsb3kgd2hlZWwuXG4tIDMgaW5zdGFsbG1lbnQgZGVkdWN0aW9ucyBkb25lIChPY3QsIE5vdiwgRGVjIDIwMjUpIG9mIFJzLiA5LDgzMy4zMyBwZXIgbW9udGguXG4tIEZpbmFuY2UgY29uZ2lybWVkIGFsbG9jYXRpb24gdG8gbWlzY2VsbGFuZW91cyBpbmNvbWVzIGdlbmVyYWwgbGVkZ2VyIGFjY2VvdW50LlxuLSBEQyBmb3J3YXJkZWQgdG8gSElBIGZvciBjbG9zdXJlIG9uIDExdGggTWF5IDIwMjYuIiwiY2VvIjpmYWxzZX0seyJkYyI6Im4iLCJuYW1lIjoiQXNhbmdhIE9wYXRoYSAtIENhc2UgMSIsInVwZGF0ZSI6IkNvbnNpZGVyZWQgYXMgcHJvZmVzc2lvbmFsIG5lZ2xpZ2VuY2UuIiwicGVuZGluZyI6IkRDIHRvIGdldCBhdWRpdCByZXBvcnQgZnJvbSBISUEgZm9yIGZ1cnRoZXIgaW5mb3JtYXRpb24uIiwiY29tcGxldGVkIjoiLSBPcmRlciBmb3IgMjAwMCBtZW1vIGN1YmVzIChScy4gMSw0NDAsMDAwKSBwbGFjZWQgd2l0aG91dCBPTUMgYXBwcm92YWwgb3IgMjAyNSidWRnZXQgcHJvdmlzaW9uLlxuLSBEQyBjb25kdWN0ZWQgaW5xdWlyeSBvbiAxNHRoIE1heSAyMDI2LlxuLSBTZXZlcmUgd2FybmluZyBpc3N1ZWQgYnkgQ0hSTyBvbiAxNXRoIE1heSAyMDI2LiIsImNlbzp0cnVlfSx7ImRjIjoicSIsIm5hbWUiOiJBc2FuZ2EgT3BhdGhhIC0gQ2FzZSAyIiwidXBkYXRlIjoiSW5jbHVkZWQgaW4gc2V2ZXJlIHdhcm5pbmcuIiwicGVuZGluZyI6IkZpbmFsaXplIGFkbWluaXN0cmF0aXZlIHJldmlld3MuIiwiY29tcGxldGVkIjoiLSBQcm9mZXNzaW9uYWwgZGlzcHV0ZSByZWdhcmRpbmcgYXJyYW5naW5nIHNlcGFyYXRlIGxvY2F0aW9uIGZvciBQSSBzdGFmZi5cbi0gT24gMjR0aCBBcHJpbCAyMDI2LCBEQyBjb25kdWN0ZWQgaW5xdWlyeSB3aXRoIE1zLiBOYWhheml5YS4iLCJjZW8iOmZhbHNlfSx7ImRjIjoiUyIsIm5hbWUiOiJBc2FuZ2EgT3BhdGhhIC0gQ2FzZSAzIiwidXBkYXRlIjoiSW5jbHVkZWQgaW4gc2V2ZXJlIHdhcm5pbmcuIiwicGVuZGluZyI6IkFsbCBwcm9jZXNzZXMgdG8gYmUgcmV2aWV3ZWQgYW5kIHN0cmVhbWxpbmVkLiIsImNvbXBsZXRlZCI6Ii0gRGlyZWN0b3IgZXhwZXJpZW5jZWQgcHJvYmxlbSB3aXRoIGludGVybmV0IGNvbm5lY3Rpb24gb24gaVBhZCwgcHJldmVudGluZyBCb2FyZFBBQyBhY2Nlc3MuXG4tIENFTyBpbnN0cnVjdGVkIHRvIHJlZmVyIHRvIERDIGFuZCByZXF1ZXN0IGFuIGF1ZGl0IHRvIGlkZW50aWZ5IHByb2Nlc3MgZ2Fwcy4iLCJjZW8iOnRydWV9LHsiZGMiOiJ0IiwibmFtZSI6IkFzYW5nYSBPcGF0aGEgLSBDYXNlIDQiLCB1cGRhdGU6IkluY2x1ZGVkIGluIHNldmVyZSB3YXJuaW5nLiIsInBlbmRpbmciOiJFbnN1cmUgaW50ZXItZGVwYXJ0bWVudGFsIHZlcmlmaWNhdGlvbiBpcyBmb2xsb3dlZC4iLCJjb21wbGV0ZWQiOiItIEJvYXJkIFBhcGVyIHN1Ym1pdHRlZCB3aXRob3V0IElUIERlcHQgY29uc2VudCBmb3IgZGlzcG9zYWwuXG4tIEl0ZW1zIGluIHdvcmtpbmcgY29uZGl0aW9uIHdlcmUgcmVjb21tZW5kZWQgZm9yIGRpc3Bvc2FsLlxuLSBDSFJPIHNob3cgY2F1c2VkIEFzYW5nYSBvbiAzMHRoIEFwcmlsIDIwMjYuIiwiY2VvIjpmYWxzZX0seyJkYyI6IlQiLCJuYW1lIjoiUi4gRS4gUHJhc2x5ICYgQ2hhbnVrYSBEaGFybWFyYXRobmEiLCJ1cGRhdGU6IkxPRCBzZW50IHRvIENoYW51a2Egb24gMTV0aCBNYXkgMjAyNS4iLCJwZW5kaW5nIjoiQ0xPIHRvIHVwZGF0ZSBvbiBMT0QgdG8gQ2hhbnVrYSA4MDAwMzcuIiwiY29tcGxldGVkIjoiLSBKYXR0cyBFbmdpbmVlcmluZyBwb2xpY3kgY2FuY2VsbGVkIGR1ZSB0byBub24tcGF5bWVudCwgYnV0IGNsaWVudCBwcm92aWRlZCBjaGVxdWUgY29weS5cbi0gRmluYW5jZSBjb25maXJtZWQgY2hlcXVlIHdhcyBzZXR0bGVkIGFnYWluc3Qgd3JvbmcgcG9saWNpZXMgYnkgQ2hhbnVrYS4iLCJjZW8iOmZhbHNlfSx7ImRjIjoidSIsIm5hbWUiOiJBc2FuZ2EgT3BhdGhhIC0gQ2FzZSA1IiwidXBkYXRlIjoiTWF0dGVyIGZvcndhcmRlZCBieSBDRU8gb24gMjl0aCBBcHJpbCAyMDI2LiIsInBlbmRpbmciOiJBZG1pbiB0byBhcnJhbmdlIHBheW1lbnQuIiwiY29tcGxldGVkIjoiLSBGYWlsZWQgdG8gYXJyYW5nZSBwYXltZW50IHRvIHN1cHBsaWVyIEZlYXRoZXIgUHJpbnQgKFJzLiAxMjAsMDAwKSBkZXNwaXRlIHJlbWluZGVycyBzaW5jZSAxMXRoIE1hcmNoLiIsImNlbzp0cnVlfSx7ImRjIjoidiIsIm5hbWUiOiJBc2FuZ2EgT3BhdGhhIC0gQ2FzZSA2IiwidXBkYXRlI
-joiQ0ZPIG1hZGUgY29tcGxhaW50IG9uIEM5dGggQXByaWwgMjAyNi4iLCJwZW5kaW5nIjoiUmVzb2x2ZSBwZW5kaW5nIGFkdmFuY2VzLiIsIGNvbXBsZXRlZCI6Ii0gUGVuZGluZyBhZHZhbmNlIHNldHRsZW1lbnRzIGFyZSBvdXRzdGFuZGluZyBmcm9tIGxhc3QgeWVhciAoTWFsc2lyaXB1cmEgUGFydGl0aW9uIEpvYikuIiwiY29tcGxldGVkIjpmYWxzZX0seyJkYyI6InciLCJuYW1lIjoiVy5BLkQuSy4gV2lqZXNpbmdoZSAoODMwNCkiLCJ1cGRhdGU6IkNIUk8gc2VudCBsZXR0ZXIgb2YgY2F1dGlvbiBvbiA4dGggSnVseSAyMDI2LiIsInBlbmRpbmciOiJNb25pdG9yIGJyb2tlciBjb2Rlcy4iLCJjb21wbGV0ZWQiOiItIEN1c3RvbWVyIHBvbGljeSBwbGFjZWQgdW5kZXIgQnJpbGxpYW56IEJyb2tlciB1bmV0aGljYWxseSBmb3IgY29tbWlzc2lvbi5cbi0gREMgZGVjaWRlZCB0byBob2xkIG9uZS1tb250aCBmaXhlZCBib251cyBmb3IgMjAyNi5cbi0gMTZ0aCBNYXkgMjAyNiwgREMgaGVsZCBpbnF1aXJ5LiIsImNlbzp0cnVlfSx7ImRjIjoidHkiLCJuYW1lIjoiQXNhbmdhIE9wYXRoYSAtIENhc2UgNyIsInVwZGF0ZSI6Ik1zLiBBc2FuZ2EgcmVxdWVzdGVkIGV4dGVuc2lvbiBvZiAxNCBkYXlzIG9uIDE2dGggSnVseSAyMDI2LiIsInBlbmRpbmciOiJEQyB0byByZXZpZXcgcmVwbHkgdG8gc2hvdyBjYXVzZS4iLCJjb21wbGV0ZWQiOiItIEJyb2tlbiBjaGFpcnMgaXNzdWU7IGZhaWxlZCB0byBzdWJtaXQgcHJvcG9zYWwgdG8gT01DLlxuLSBEQyBzaG93IGNhdXNlZCBBc2FuZ2Egb24gMTF0aCBKdWx5IG9uIGFsbGVnZWQgbmVnbGlnZW5jZSAoNyB0byAxNSkuIiwiY2VvIjp0cnVlfSx7ImRjIjoieiIsIm5hbWUiOiJQcmFkZWVwIERpc3NhbmF5YWtlIC0gOTI3OCIsInVwZGF0ZSI6IkNvbW11bmljYXRpb24gbWFkZSBvbiA1dGggQXVndXN0IDIwMjYuIiwicGVuZGluZyI6IkRDIHdpbGwgcmV2aXNpdCBhbmQgcmV2aWV3IGFycmFuZ2VtZW50IGF0IGVuZCBvZiBTZXB0ZW1iZXIgMjAyNi4iLCJjb21wbGV0ZWQiOiItIENvbXBsYWludCByZWdhcmRpbmcgcG9saWNpZXMgYm9va2VkIHdpdGhvdXQgdXNlciBJRC5cbi0gREMgZGVjaWRlZCB0byByZW1vdmUgdGhpcyBjYXNlIG9uIDMxc3QgSnVseSBzaW5jZSBubyBwcm9jZWR1cmFsIHZpb2xhdGlvbi5cbi0gRGVjaWRlZCB0byBkZW1vdGUgaGltIGZyb20gWk0gdG8gUG9ydGZvbGlvbiBNYW5hZ2VyIHcuZS5mIDEgQXVndXN0IDIwMjYsIGJhc2ljIHNhbGFyeSByZW1haW5zIDE3NSwwMDAuXG4tIFJlbG9jYXRlZCB0byBHYW1wYWhhIGFzIHJlcXVlc3RlZCBkdWUgdG8gaGVhbHRoLiIsImNlb2Y6ZmFsc2V9LHsiZGMiOiJBYSIsInVwZGF0ZSI6Ik5ldyBjb21wbGFpbnQgcmV2aWV3ZWQgc2VudCBieSBEYWhhbSBvbiAxN3RoIEF1Z3VzdCAyMDI2LiIsIm5hbWUiOiJVLkguSi5TLlVkdXdha2EgLSA4MDA0MjEiLCJwZW5kaW5nIjoiTW9uaXRvciB0ZXJtaW5hdGVkIHN0YXR1cy4iLCJjb21wbGV0ZWQiOiItIENvbGxlY3RlZCBwcmVtaXVtIGJ1dCBmYWlsZWQgdG8gaW5pdGlhdGUgcG9saWN5LiBFZGl0ZWQgYW5kIHByaW50ZWQgYmxhbmsgaW5zdXJhbmNlIGNhcmQuXG4tIFN1YnNlcXVlbnRseSBwYWlkIGZ1bGwgcHJlbWl1bS4gQ0hSTyBzZW50IHNvZnQgd2FybmluZy5cbi0gT24gMTd0aCBBdWd1c3QgMjAyNiwgbmV3IGNvbXBsYWludCBmb3IgY2FuY2VsbGF0aW9uIGFuZCBtaXNhcHByb3ByaWF0aW9uIG9mIFJzLiAxNTAsMDAwLlxuLSBVZHV3YWthJ3Mgc3lzdGVtIGFuZCBIRVVTIGFjY2VzcyBjYW5jZWxsZWQgb24gMjR0aCBBdWcuIDIwMjYuIiwiY2VvIjpmYWxzZX0seyJkYyI6IkFwIiwibmFtZSI6IkEuQS5DLk0uIFBlaXJpcyAoQ2hhdGh1cmEgOTk1MykiLCJ1cGRhdGU6IkFub3RoZXIgbWlzYXBwcm9wcmlhdGlvbiByZXBvcnRlZCBvbiAyMHRoIEF1ZyAyMDI2IGJ5IE1zLiBTb25hbGkuIiwicGVuZGluZyI6IkNMTyB0byBpbml0aWF0ZSBjYXNlIGF0IEZyYXVkIGJ1cmVhdSBhbmQgQ2lubmFtb24gR2FyZGVuIHBvbGljZS4iLCJjb21wbGV0ZWQiOiItIEN1c3RvbWVyIGNvbXBsYWludCBmb3IgdW5zZXR0bGVkIHByZW1pdW0uIFNhbGFyeSBoZWxkIDE0dGggSnVseSwgc3VzcGVuZGVkIDE3dGggSnVseSAyMDI2LlxuLSBDaGF0aHVyYSBmYWlsZWQgdG8gbWFrZSBwYXltZW50IG9uIDE5dGggQXVndXN0IGFzIHByb21pc2VkLlxuLSBMYXRlc3Qgb3V0c3RhbmRpbmcgbGlzdCBhcyBvZiAyMXN0IEF1Z3VzdCAyMDI2IGlzIFJzLiA5MTYsNDkwLjU3LiIsImNlb3I6dHJ1ZX0seyJkYyI6IkFyIiwibmFtZSI6IkRpbHVtIFBhdGhpcmFuYSAoOTk1MCkiLCJ1cGRhdGU6IkRDIGRlY2lkZWQgdG8gaG9sZCBEaWx1bSdzIGluY3JlbWVudHMgYW5kIHByb21vdGlvbnMgZm9yIDIwMjYuIiwicGVuZGluZyI6Ik1vbml0b3IgcmVpbnN0YXRlZCBwb2xpY3kuIiwiY29tcGxldGVkIjoiLSBEZXBvc2l0ZWQgUnMuIDk0LDg5NyB0byBhIGN1c3RvbWVyIHVzaW5nIGEgY2hlcXVlIGZyb20gYW5vdGhlciBjdXN0b21lci4gQWRtaXR0ZWQgJ3ByZW1pdW0gcm9sbGluZycgb24gMjNyZCBKdWx5IDIwMjYuXG4tIE9uIDI0dGggSnVseSAyMDI2LCBMYWwncyBwb2xpY3kgd2FzIHJlaW5zdGF0ZWQgYnkgTXIuIERpbHVtIHBheWluZyBvdXRzdGFuZGluZy4iLCJjZW8iOmZhbHNlfSx7ImRjIjoiQXMiLCJuYW1lIjoiTS5MLkEuSS5ILiBNb2xsaWdvZGEgLSA4MTYwIiwidXBkYXRlIjoiQ0xPIHRvIGluaXRpYXRlIGEgY291cnQgY2FzZSB0byBiZSBmaWxlZCBiZWZvcmUgZW5kIG9mIEF1Z3VzdCAyMDI2LiIsInBlbmRpbmciOiJGaWxlIGNvdXJ0IGNhc2UuIiwiY29tcGxldGVkIjoiLSBEZWZhdWx0ZWQgb24gdmVoaWNsZSBsb2Fucy4gVk9QIG9uIDd0aCBNYXkgMjAyNiBmb3IgUnMuIDIsMTM5LDM4My5cbi0gQ0xPIGNoZWNrZWQgb3JpZ2luYWwgQ1IncyBhbmQgY29uZ2lybWVkIG9uIDMxc3QgSnVseSAyMDI2LiIsImNlb3I6ZmFsc2V9LHsiZGMiOiJBbSIsInVwZGF0ZSI6IkRlbW90ZWQgZnJvbSBTZW5p b3IgTWFuYWdlciB0byBNYW5hZ2VyIEFkbWluaXN0cmF0aW9uIGVmZmVjdGl2ZSAxc3QgQXVndXN0IDIwMjYuIiwibmFtZSI6Ik1zIEFzYW5nYSBPcGF0aGEgLSBEZW1vdGlvbiIsInBlbmRpbmciOiJDRk8gdG8gbWFuYWdlIHJldmlzZWQgZHV0aWVzLiIsImNvbXBsZXRlZCI6Ii0gREMgY29uZHVjdGVkIGlucXVpcnkgb24gMTJ0aCBBdWd1c3QgMjAyNi5cbi0gQmFzaWMgc2FsYXJ5IHJlbWFpbnMgdW5jaGFuZ2VkLCBhbGxvd2FuY2VzIHJldmlzZWQuXG4tIFNlY3VyaXR5IGFuZCBKYW5pdG9yaWFsIGZ1bmN0aW9ucyBjb21lIGRpcmVjdGx5IHVuZGVyIEhSLiIsImNlbzp0cnVlfSx7ImRjIjoiQW4iLCJuYW1lIjoiSi5LLlAgTWFub2ogTWl0aHVyYW5nYSA4NTA0IC0gSG9tYWdhbWEiLCJ1cGRhdGU6Ik9uIDI1dGggQXVnIDIwMjYsIERDIGluc3RydWN0ZWQgTXMuIFNvbmFsaSB0byBmaW5kIHdoZXJlIHByZW1pdW0gaGFzIGJlZW4gbWFkZS4iLCJwZW5kaW5nIjoiQXdhaXRpbmcgZGV0YWlscyBmcm9tIE1VVyBhYm91dCBpbmNpZGVudC4iLCJjb21wbGV0ZWQiOiItIEdlbmVyYXRlZCBwb2xpY3kgNUg0VkNQMDAwMDAyMDcyIHVuZGVyIGJyb2tlciBjb2RlIHdpdGhvdXQgYnJva2VyIHJlcXVlc3QgZm9ybS5cbi0gRXhwbGFpbmVkIHRoYXQgYnJva2VyIHJlcXVlc3Qgd2FzIHJlY2VpdmVkIHdpdGhvdXQgdmVoaWNsZSByZWdpc3RyYXRpb24gc28gaGUgY291bGRuJ3QgdXBsb2FkIGl0LiIsImNlb3I6ZmFsc2V9LHsiZGMiOiJBbyIsIm5hbWUiOiJSLkEuSy4gVmlkdXJhbmdhIChLYXN1bikgOTk0NSAtIE1haGFyYWdhbWEiLCJ1cGRhdGU6IkRDIHRvIHJldmlldyByZXBseS4iLCJwZW5kaW5nIjoiVHJhY2sgYmFsYW5jZSBtb25leSBmcm9tIGN1c3RvbWVyLiIsImNvbXBsZXRlZCI6Ii0gUG9saWN5IDVNOVZDUDAwMDAwMTg1NSBjYW5jZWxsZWQgd2l0aCBvdXRzdGFuZGluZyBsdW1wLiBDdXN0b21lciBwYWlkIFJzLiA2NSwwMDAgdmlhIGZ1bmQgdHJhbnNmZXIgaW4gS2FzdW4ncyBuYW1lLlxuLSBDSFJPIHNob3cgY2F1c2VkIEthc3VuIG9uIDI0dGggSnVseSAyMDI2LlxuLSBLYXN1bidzIHJlcGx5IG9uIDZ0aCBBdWd1c3QgbWVudGlvbmVkIGhlIHJlY2VpdmVkIFJzLiA0MCwwMDAgYW5kIGFjdGl2YXRlZCBwb2xpY3kgb24gNXRoIEF1Z3VzdC4iLCJjZW8iOmZhbHNlfSx7ImRjIjoiQXEiLCJuYW1lIjoiUGVuZGluZyBTZWFsIFJlcXVlc3RzIiwidXBkYXRlIjoiQ0VPIGZvcndhcmRlZCB0byBEQyBvbiAyMHRoIEp1bHkgMjAyNiBmb3IgREMgYWN0aW9uLiIsInBlbmRpbmciOiJNb25pdG9yIG5ldyBzZWFsIGRpc3BhdGNoZXMuIiwiaGlzdG9yeSI6Ii0gQmFja2xvZyBvZiBwZW5kaW5nIGFuZCBuZXcgc2VhbHMgZm9yIGJyYW5jaCBzdGFmZiBub3QgZG9uZSBieSBBc2FuZ2EgZGVzcGl0ZSByZW1pbmRlcnMuIiwidXBkYXRlZEJ5IjoiREMgZGVtb3RlZCBBc2FuZ2EgdG8gTWFuYWdlciBsZXZlbCBpbiBBdWcgMjAyNi4iLCJjZW8iOnRydWV9XQ==";
-// Decoding matrix
-const documentSeedData = JSON.parse(atob(rawCompressedMatrix));
-let caseDatabase = JSON.parse(localStorage.getItem('dcDatabase'));
-if (!caseDatabase || caseDatabase.length < 5) {
-caseDatabase = documentSeedData;
-localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
-}
-const container = document.getElementById('casesContainer');
-const searchBar = document.getElementById('searchBar');
-const noResults = document.getElementById('noResults');
-const caseForm = document.getElementById('caseForm');
-const formDcInput = document.getElementById('formDc');
-// LIVE KEY LISTENERS FOR DUAL ENTRY ENGINE
-formDcInput.addEventListener('input', (e) => {
-const matchingCase = caseDatabase.find(c => c.dc.trim().toLowerCase() === e.target.value.trim().toLowerCase());
-const formTitle = document.getElementById('formTitle');
-const submitBtn = document.getElementById('submitBtn');
-const wrapper = document.getElementById('formWrapper');
-if (matchingCase) {
-formTitle.innerHTML = 📝 UPDATE MODE active: Modifying Case [Key ID: ${matchingCase.dc}];
-formTitle.style.color = "var(--warning)";
-wrapper.style.borderColor = "var(--warning)";
-submitBtn.innerHTML = "Apply & Save Case Updates";
-document.getElementById('formName').value = matchingCase.name;
-document.getElementById('formUpdate').value = matchingCase.update;
-document.getElementById('formPending').value = matchingCase.pending;
-document.getElementById('formCompleted').value = matchingCase.completed || item.history || "";
-document.getElementById('formCeo').checked = matchingCase.ceo;
-} else {
-formTitle.innerHTML = "📥 ADD MODE active: Creating Brand New Record Profile";
-formTitle.style.color = "var(--primary)";
-wrapper.style.borderColor = "var(--border)";
-submitBtn.innerHTML = "Save New Entry to Database";
-}
-});
-function displayCases(data) {
-container.innerHTML = "";
-if (data.length === 0) { noResults.style.display = "block"; return; }
-noResults.style.display = "none";
-data.forEach((item, index) => {
-const card = document.createElement('div');
-card.className = 'case-card';
-card.innerHTML = <div class="case-header"> <p class="accused-name">👤 ${item.name}</p> <span class="dc-num">Key ID: ${item.dc}</span> </div> <div class="grid"> <div><div class="field-title">📈 Latest Update Status</div><div class="field-value">${item.update}</div></div> <div><div class="field-title">⚠️ Actions to be Taken</div><div class="field-value">${item.pending}</div></div> </div> <div class="grid"> <div><div class="field-title">✅ Historical Actions Completed (Done Area)</div><div class="field-value">${item.completed || item.history || ""}</div></div> <div><div class="field-title">💼 Informed to CEO</div><div class="field-value"> <span class="badge ${item.ceo ? 'badge-yes' : 'badge-no'}">${item.ceo ? 'YES / OBSERVING' : 'NO / PENDING'}</span> </div></div> </div> <div class="card-actions"> <button class="btn-secondary" onclick="triggerEdit('${item.dc}')">Edit Profile Fields</button> <button class="btn-danger" onclick="deleteCase(${index})">Remove from List</button> </div>;
-container.appendChild(card);
-});
-}
-caseForm.addEventListener('submit', (e) => {
-e.preventDefault();
-const inputKey = document.getElementById('formDc').value.trim();
-const targetedCaseIndex = caseDatabase.findIndex(c => c.dc.toLowerCase() === inputKey.toLowerCase());
-const targetPayload = {
-dc: inputKey,
-name: document.getElementById('formName').value,
-update: document.getElementById('formUpdate').value,
-pending: document.getElementById('formPending').value,
-completed: document.getElementById('formCompleted').value,
-ceo: document.getElementById('formCeo').checked
-};
-if (targetedCaseIndex > -1) {
-caseDatabase[targetedCaseIndex] = targetPayload;
-alert(Case index key ${inputKey} successfully updated!);
-} else {
-caseDatabase.unshift(targetPayload);
-alert(New custom case key ${inputKey} created successfully!);
-}
-localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
-caseForm.reset();
-document.getElementById('formTitle').innerHTML = "📥 Add New Case or Update Existing (Enter Matching Case ID)";
-document.getElementById('formTitle').style.color = "var(--primary)";
-document.getElementById('formWrapper').style.borderColor = "var(--border)";
-document.getElementById('submitBtn').innerHTML = "Save Changes to Database";
-displayCases(caseDatabase);
-searchBar.value = "";
-});
-window.triggerEdit = function(key) {
-document.getElementById('formDc').value = key;
-formDcInput.dispatchEvent(new Event('input'));
-window.scrollTo({ top: caseForm.offsetTop - 20, behavior: 'smooth' });
-}
-window.deleteCase = function(index) {
-if(confirm("Purge profile permanently from browser tracking storage?")) {
-caseDatabase.splice(index, 1);
-localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
-displayCases(caseDatabase);
-}
-}
-window.restoreDefaults = function() {
-if(confirm("Wipe cache and reload full comprehensive minutes histories?")) {
-localStorage.removeItem('dcDatabase');
-caseDatabase = documentSeedData;
-localStorage.setItem('dcDatabase', JSON.stringify(caseDatabase));
-displayCases(caseDatabase);
-searchBar.value = "";
-}
-}
-searchBar.addEventListener('input', (e) => {
-const query = e.target.value.toLowerCase();
-const filtered = caseDatabase.filter(item =>
-item.dc.toLowerCase().includes(query) ||
-item.name.toLowerCase().includes(query) ||
-item.update.toLowerCase().includes(query) ||
-(item.completed && item.completed.toLowerCase().includes(query))
-);
-displayCases(filtered);
-});
-displayCases(caseDatabase);
+# ----------------------------------------------------
+# 1. Employee & Case Details Form
+# ----------------------------------------------------
+st.subheader("📋 1. Case Information")
+col1, col2 = st.columns(2)
+with col1:
+    employee_name = st.text_input("Employee Name")
+    employee_id = st.text_input("Employee ID")
+with col2:
+    department = st.text_input("Department")
+    case_date = st.date_input("Date of Reporting")
 
+# ----------------------------------------------------
+# 2. Classification of Offence
+# ----------------------------------------------------
+st.subheader("🔍 2. Classification of Offence")
+
+offence_type = st.radio(
+    "Select the Schedule Classification:",
+    ["Schedule I: Acts of Minor Misconduct", "Schedule II: Acts of Grave Misconduct"],
+    index=0
+)
+
+# Define sub-options from the document
+minor_offences = [
+    "1) Absence from work without reasonable excuse.",
+    "2) Late attendance at work more than 8 days per month without reasonable grounds.",
+    "3) Malingering.",
+    "4) Violation of instructions/general procedures laid down for the maintenance of cleanliness.",
+    "5) Leaving the place of work without permission or system notation.",
+    "6) Misuse of company stationery and equipment.",
+    "7) Failure to attend instructions/training sessions.",
+    "8) Default in payment of loans and Insurance premiums granted by the company.",
+    "9) Failure to maintain essential records.",
+    "10) Failure to observe safety precautions.",
+    "11) Wearing attire not in conformity with accepted norms/morals.",
+    "12) Any other act/omission regarded as minor misconduct by Management."
+]
+
+grave_offences = [
+    "1) Causing loss or damage to goods/articles belonging to the Company via negligence/willful act.",
+    "2) Mischief within Company premises or property.",
+    "3) Theft or acts of dishonesty regarding Company property/assets/securities.",
+    "4) Forgery, falsification, or tampering of documents.",
+    "5) Habitual breach of Company regulations or Management orders.",
+    "6) Collusion with customers/agents resulting in Company loss.",
+    "7) Intimidation, insult, or annoyance to another employee.",
+    "8) Willful insubordination or willful breach of discipline.",
+    "9) Incivility to any member of the public.",
+    "10) Insolence or disrespect to any person within premises.",
+    "11) Giving or soliciting gratification/consideration.",
+    "12) Negligence at work.",
+    "13) Smelling of liquor, drunkenness, or under influence of narcotic drugs on duty/premises.",
+    "14) Conviction in a court of law involving moral turpitude.",
+    "15) Gross impropriety, misuse or abuse of delegated authority.",
+    "16) Unauthorized downloading of company data.",
+    "17) Disorderly behavior, drinking, or gambling within premises.",
+    "18) Altercation while on duty.",
+    "19) Making a false/fabricated complaint against another employee.",
+    "20) Refusing to give evidence or giving false evidence in proceedings.",
+    "21) Going back on a complaint/statement/evidence without satisfactory reason.",
+    "22) Failing to report loss or damage of Company property.",
+    "23) Breach of Regulations and established procedures.",
+    "24) Sabotage or willful damage to Company property/material.",
+    "25) Misrepresentation of facts.",
+    "26) Issue of unlawful instructions to subordinates.",
+    "27) Habitual late attendance.",
+    "28) Driving Company vehicles under the influence of liquor or drugs.",
+    "29) Dangerous or unauthorized driving/use of Company vehicles.",
+    "30) Misuse of authority or position for personal gain.",
+    "31) Submission of false/forged documents for personal gains.",
+    "32) Refusal to accept communication from the Company.",
+    "33) Competing business activity / conducting other business during office hours.",
+    "34) Refusal to perform overtime after advance notification."
+]
+
+if offence_type == "Schedule I: Acts of Minor Misconduct":
+    selected_sub_offence = st.selectbox("Select specific Minor Misconduct item:", minor_offences)
+else:
+    selected_sub_offence = st.selectbox("Select specific Grave Misconduct item:", grave_offences)
+
+
+# ----------------------------------------------------
+# 3. Dynamic Checklists & Action Tracking
+# ----------------------------------------------------
+st.subheader("⚙️ 3. Procedure Checklist & Remarks")
+
+if offence_type == "Schedule I: Acts of Minor Misconduct":
+    st.info("💡 Follow Procedure for Dealing with Minor Offences")
+    
+    # Checklist Steps defined in Schedule 3
+    minor_steps = [
+        {"step": "Step 1: Verbal Warning", "detail": "Discussed privately with employee & recorded in file.", "auth": "Supervisor / Dept Head", "timeline": "Within 2 working days"},
+        {"step": "Step 2: First Written Warning", "detail": "If behavior is repeated or unsatisfactory.", "auth": "Dept Head / HR", "timeline": "Within 3 working days of recurrence"},
+        {"step": "Step 3: Final Written Warning", "detail": "For continued misconduct or repeated violations.", "auth": "Dept Head / HR", "timeline": "Within 5 working days"},
+        {"step": "Step 4: Escalation", "detail": "Persistent non-compliance leading to formal inquiry.", "auth": "Disciplinary Committee", "timeline": "Conclusion within 10 days"}
+    ]
+    
+    # Render steps dynamically with individual check boxes and remarks columns
+    for index, step in enumerate(minor_steps):
+        with st.container():
+            col_check, col_info = st.columns([1, 4])
+            with col_check:
+                is_completed = st.checkbox(f"**{step['step']}**", key=f"minor_check_{index}")
+            with col_info:
+                st.caption(f"**Responsible:** {step['auth']} | **Timeline:** {step['timeline']}")
+                st.write(f"*{step['detail']}*")
+            
+            # Individual remark column right underneath each item
+            st.text_area("Remarks / Notes for this step:", key=f"minor_remark_{index}", height=68)
+            st.markdown("---")
+
+else:
+    st.warning("⚠️ Follow Procedure for Dealing with Major Offences")
+    
+    # Checklist Steps defined in Schedule 4
+    major_steps = [
+        {"step": "Step 1: Preliminary Investigation", "detail": "Determine whether a formal inquiry is warranted.", "auth": "HR / DC", "timeline": "Within 3 working days of report"},
+        {"step": "Step 2: Preliminary Inquiry", "detail": "Conducted if warranted.", "auth": "HR / DC", "timeline": "Within 3 working days of decision"},
+        {"step": "Step 3: Letter of Suspension", "detail": "If necessary, suspend employee pending inquiry (with pay or per policy).", "auth": "HR / DC", "timeline": "Within 1 working day of decision"},
+        {"step": "Step 4: Charge Sheet Issued", "detail": "Detailing offences and inviting explanation within stipulated time.", "auth": "HR / DC", "timeline": "Within 10 working days"},
+        {"step": "Step 5: Disciplinary Inquiry", "detail": "A fair hearing conducted by an inquiring authority.", "auth": "DC", "timeline": "Within 15 working days of charge sheet"},
+        {"step": "Step 6: Decision & Recommendation", "detail": "Based on inquiry findings.", "auth": "DC", "timeline": "Within 5 working days of conclusion"},
+        {"step": "Step 7: Action Taken", "detail": "Written warning, Suspension, Demotion, or Dismissal.", "auth": "HR", "timeline": "Within 3 working days of decision"}
+    ]
+    
+    for index, step in enumerate(major_steps):
+        with st.container():
+            col_check, col_info = st.columns([1, 4])
+            with col_check:
+                is_completed = st.checkbox(f"**{step['step']}**", key=f"major_check_{index}")
+            with col_info:
+                st.caption(f"**Responsible:** {step['auth']} | **Timeline:** {step['timeline']}")
+                st.write(f"*{step['detail']}*")
+                
+            # Individual remark column right underneath each item
+            st.text_area("Remarks / Notes for this step:", key=f"major_remark_{index}", height=68)
+            st.markdown("---")
+            
+    st.caption("📋 *Note: Timelines may vary subject to the complexity of the offence or incident reported.*")
+
+# Save Button Showcase
+if st.button("💾 Save Case Log File"):
+    if employee_name and employee_id:
+        st.success(f"Case log successfully simulated for {employee_name} ({employee_id}) under {offence_type}!")
+    else:
+        st.error("Please fill out the Employee Name and ID before saving.")
