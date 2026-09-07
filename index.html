@@ -1,155 +1,328 @@
-import streamlit as st
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIL Disciplinary Case Management System</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #334155;
+            --minor-alert: #d97706;
+            --major-alert: #dc2626;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        h1 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px;}
+        h2 { color: var(--primary); font-size: 1.3rem; margin-top: 25px; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 5px; font-size: 0.9rem; }
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: #fff;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0 20px 0;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .content-box-1 {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8fafc;
+            margin-bottom: 25px;
+        }
+        .content-box-2 {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            background: #ffffff;
+            margin-bottom: 25px;
+            box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.02);
+        }
 
-# Set up page configurations
-st.set_page_config(page_title="Disciplinary Case Management System", layout="wide")
+        .procedure-banner {
+            padding: 12px;
+            border-left: 4px solid transparent;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .minor-banner { background-color: #fef3c7; color: #92400e; border-left-color: var(--minor-alert); }
+        .major-banner { background-color: #fee2e2; color: #991b1b; border-left-color: var(--major-alert); }
+        
+        .checklist-item {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+        .step-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .step-header input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 3px;
+            cursor: pointer;
+        }
+        .step-title { font-weight: 700; font-size: 1rem; }
+        .metadata {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .step-desc {
+            font-style: italic;
+            font-size: 0.9rem;
+            margin: 8px 0;
+            color: #475569;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-top: 5px;
+            font-family: inherit;
+            background-color: #fff;
+        }
+        .save-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .save-btn:hover { background-color: #1d4ed8; }
+    </style>
+</head>
+<body>
 
-st.title("⚖️ PIL Disciplinary Case Management System")
-st.write("Record and track employee disciplinary cases according to company procedure.")
-
-# ----------------------------------------------------
-# 1. Employee & Case Details Form
-# ----------------------------------------------------
-st.subheader("📋 1. Case Information")
-col1, col2 = st.columns(2)
-with col1:
-    employee_name = st.text_input("Employee Name")
-    employee_id = st.text_input("Employee ID")
-with col2:
-    department = st.text_input("Department")
-    case_date = st.date_input("Date of Reporting")
-
-# ----------------------------------------------------
-# 2. Classification of Offence
-# ----------------------------------------------------
-st.subheader("🔍 2. Classification of Offence")
-
-offence_type = st.radio(
-    "Select the Schedule Classification:",
-    ["Schedule I: Acts of Minor Misconduct", "Schedule II: Acts of Grave Misconduct"],
-    index=0
-)
-
-# Define sub-options from the document
-minor_offences = [
-    "1) Absence from work without reasonable excuse.",
-    "2) Late attendance at work more than 8 days per month without reasonable grounds.",
-    "3) Malingering.",
-    "4) Violation of instructions/general procedures laid down for the maintenance of cleanliness.",
-    "5) Leaving the place of work without permission or system notation.",
-    "6) Misuse of company stationery and equipment.",
-    "7) Failure to attend instructions/training sessions.",
-    "8) Default in payment of loans and Insurance premiums granted by the company.",
-    "9) Failure to maintain essential records.",
-    "10) Failure to observe safety precautions.",
-    "11) Wearing attire not in conformity with accepted norms/morals.",
-    "12) Any other act/omission regarded as minor misconduct by Management."
-]
-
-grave_offences = [
-    "1) Causing loss or damage to goods/articles belonging to the Company via negligence/willful act.",
-    "2) Mischief within Company premises or property.",
-    "3) Theft or acts of dishonesty regarding Company property/assets/securities.",
-    "4) Forgery, falsification, or tampering of documents.",
-    "5) Habitual breach of Company regulations or Management orders.",
-    "6) Collusion with customers/agents resulting in Company loss.",
-    "7) Intimidation, insult, or annoyance to another employee.",
-    "8) Willful insubordination or willful breach of discipline.",
-    "9) Incivility to any member of the public.",
-    "10) Insolence or disrespect to any person within premises.",
-    "11) Giving or soliciting gratification/consideration.",
-    "12) Negligence at work.",
-    "13) Smelling of liquor, drunkenness, or under influence of narcotic drugs on duty/premises.",
-    "14) Conviction in a court of law involving moral turpitude.",
-    "15) Gross impropriety, misuse or abuse of delegated authority.",
-    "16) Unauthorized downloading of company data.",
-    "17) Disorderly behavior, drinking, or gambling within premises.",
-    "18) Altercation while on duty.",
-    "19) Making a false/fabricated complaint against another employee.",
-    "20) Refusing to give evidence or giving false evidence in proceedings.",
-    "21) Going back on a complaint/statement/evidence without satisfactory reason.",
-    "22) Failing to report loss or damage of Company property.",
-    "23) Breach of Regulations and established procedures.",
-    "24) Sabotage or willful damage to Company property/material.",
-    "25) Misrepresentation of facts.",
-    "26) Issue of unlawful instructions to subordinates.",
-    "27) Habitual late attendance.",
-    "28) Driving Company vehicles under the influence of liquor or drugs.",
-    "29) Dangerous or unauthorized driving/use of Company vehicles.",
-    "30) Misuse of authority or position for personal gain.",
-    "31) Submission of false/forged documents for personal gains.",
-    "32) Refusal to accept communication from the Company.",
-    "33) Competing business activity / conducting other business during office hours.",
-    "34) Refusal to perform overtime after advance notification."
-]
-
-if offence_type == "Schedule I: Acts of Minor Misconduct":
-    selected_sub_offence = st.selectbox("Select specific Minor Misconduct item:", minor_offences)
-else:
-    selected_sub_offence = st.selectbox("Select specific Grave Misconduct item:", grave_offences)
-
-
-# ----------------------------------------------------
-# 3. Dynamic Checklists & Action Tracking
-# ----------------------------------------------------
-st.subheader("⚙️ 3. Procedure Checklist & Remarks")
-
-if offence_type == "Schedule I: Acts of Minor Misconduct":
-    st.info("💡 Follow Procedure for Dealing with Minor Offences")
+<div class="container">
+    <h1>⚖️ PIL Disciplinary Case Management System</h1>
     
-    # Checklist Steps defined in Schedule 3
-    minor_steps = [
-        {"step": "Step 1: Verbal Warning", "detail": "Discussed privately with employee & recorded in file.", "auth": "Supervisor / Dept Head", "timeline": "Within 2 working days"},
-        {"step": "Step 2: First Written Warning", "detail": "If behavior is repeated or unsatisfactory.", "auth": "Dept Head / HR", "timeline": "Within 3 working days of recurrence"},
-        {"step": "Step 3: Final Written Warning", "detail": "For continued misconduct or repeated violations.", "auth": "Dept Head / HR", "timeline": "Within 5 working days"},
-        {"step": "Step 4: Escalation", "detail": "Persistent non-compliance leading to formal inquiry.", "auth": "Disciplinary Committee", "timeline": "Conclusion within 10 days"}
-    ]
-    
-    # Render steps dynamically with individual check boxes and remarks columns
-    for index, step in enumerate(minor_steps):
-        with st.container():
-            col_check, col_info = st.columns([1, 4])
-            with col_check:
-                is_completed = st.checkbox(f"**{step['step']}**", key=f"minor_check_{index}")
-            with col_info:
-                st.caption(f"**Responsible:** {step['auth']} | **Timeline:** {step['timeline']}")
-                st.write(f"*{step['detail']}*")
-            
-            # Individual remark column right underneath each item
-            st.text_area("Remarks / Notes for this step:", key=f"minor_remark_{index}", height=68)
-            st.markdown("---")
+    <h2>📋 1. Case Information</h2>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="empName">Employee Name</label>
+            <input type="text" id="empName" required>
+        </div>
+        <div class="form-group">
+            <label for="empId">Employee ID</label>
+            <input type="text" id="empId" required>
+        </div>
+        <div class="form-group">
+            <label for="dept">Department</label>
+            <input type="text" id="dept">
+        </div>
+        <div class="form-group">
+            <label for="caseDate">Date of Reporting</label>
+            <input type="date" id="caseDate">
+        </div>
+    </div>
 
-else:
-    st.warning("⚠️ Follow Procedure for Dealing with Major Offences")
-    
-    # Checklist Steps defined in Schedule 4
-    major_steps = [
-        {"step": "Step 1: Preliminary Investigation", "detail": "Determine whether a formal inquiry is warranted.", "auth": "HR / DC", "timeline": "Within 3 working days of report"},
-        {"step": "Step 2: Preliminary Inquiry", "detail": "Conducted if warranted.", "auth": "HR / DC", "timeline": "Within 3 working days of decision"},
-        {"step": "Step 3: Letter of Suspension", "detail": "If necessary, suspend employee pending inquiry (with pay or per policy).", "auth": "HR / DC", "timeline": "Within 1 working day of decision"},
-        {"step": "Step 4: Charge Sheet Issued", "detail": "Detailing offences and inviting explanation within stipulated time.", "auth": "HR / DC", "timeline": "Within 10 working days"},
-        {"step": "Step 5: Disciplinary Inquiry", "detail": "A fair hearing conducted by an inquiring authority.", "auth": "DC", "timeline": "Within 15 working days of charge sheet"},
-        {"step": "Step 6: Decision & Recommendation", "detail": "Based on inquiry findings.", "auth": "DC", "timeline": "Within 5 working days of conclusion"},
-        {"step": "Step 7: Action Taken", "detail": "Written warning, Suspension, Demotion, or Dismissal.", "auth": "HR", "timeline": "Within 3 working days of decision"}
-    ]
-    
-    for index, step in enumerate(major_steps):
-        with st.container():
-            col_check, col_info = st.columns([1, 4])
-            with col_check:
-                is_completed = st.checkbox(f"**{step['step']}**", key=f"major_check_{index}")
-            with col_info:
-                st.caption(f"**Responsible:** {step['auth']} | **Timeline:** {step['timeline']}")
-                st.write(f"*{step['detail']}*")
-                
-            # Individual remark column right underneath each item
-            st.text_area("Remarks / Notes for this step:", key=f"major_remark_{index}", height=68)
-            st.markdown("---")
-            
-    st.caption("📋 *Note: Timelines may vary subject to the complexity of the offence or incident reported.*")
+    <h2>🔍 2. Classification of Offence</h2>
+    <div class="radio-group">
+        <label class="radio-label">
+            <input type="radio" name="schedule" value="minor" checked onchange="toggleSchedule()"> Schedule I: Minor Misconduct
+        </label>
+        <label class="radio-label">
+            <input type="radio" name="schedule" value="grave" onchange="toggleSchedule()"> Schedule II: Grave Misconduct
+        </label>
+    </div>
 
-# Save Button Showcase
-if st.button("💾 Save Case Log File"):
-    if employee_name and employee_id:
-        st.success(f"Case log successfully simulated for {employee_name} ({employee_id}) under {offence_type}!")
-    else:
-        st.error("Please fill out the Employee Name and ID before saving.")
+    <div class="content-box-1">
+        <div class="form-group">
+            <label for="subOffence" style="color: var(--primary); font-size: 0.95rem; margin-bottom: 8px;">Specific Offence Description</label>
+            <select id="subOffence" style="width: 100%; max-width: 100%;">
+            </select>
+        </div>
+    </div>
+
+    <h2>⚙️ 3. Procedure Checklist & Remarks</h2>
+    <div class="content-box-2">
+        <div id="procedureBanner" class="procedure-banner"></div>
+        <div id="checklistContainer"></div>
+    </div>
+    
+    <button class="save-btn" onclick="saveCaseLog()">💾 Save Case Log</button>
+</div>
+
+<script>
+    const minorOffences = [
+        "1) Absence from work without reasonable excuse.",
+        "2) Late attendance at work more than 8 days per month without reasonable grounds.",
+        "3) Malingering.",
+        "4) Violation of instructions/general procedures laid down for the maintenance of cleanliness.",
+        "5) Leaving the place of work without permission or system notation.",
+        "6) Misuse of company stationery and equipment.",
+        "7) Failure to attend instructions/training sessions.",
+        "8) Default in payment of loans and Insurance premiums granted by the company.",
+        "9) Failure to maintain essential records.",
+        "10) Failure to observe safety precautions.",
+        "11) Wearing attire not in conformity with accepted norms/morals.",
+        "12) Any other act/omission regarded as minor misconduct by Management."
+    ];
+
+    const graveOffences = [
+        "1) Causing loss or damage to goods/articles via negligence/willful act.",
+        "2) Mischief within Company premises or property.",
+        "3) Theft or acts of dishonesty regarding Company property/assets/securities.",
+        "4) Forgery, falsification, or tampering of documents.",
+        "5) Habitual breach of Company regulations or Management orders.",
+        "6) Collusion with customers/agents resulting in Company loss.",
+        "7) Intimidation, insult, or annoyance to another employee.",
+        "8) Willful insubordination or willful breach of discipline.",
+        "9) Incivility to any member of the public.",
+        "10) Insolence or disrespect to any person within premises.",
+        "11) Giving or soliciting gratification/consideration.",
+        "12) Negligence at work.",
+        "13) Smelling of liquor, drunkenness, or under influence of narcotic drugs on duty.",
+        "14) Conviction in a court of law involving moral turpitude.",
+        "15) Gross impropriety, misuse or abuse of delegated authority.",
+        "16) Unauthorized downloading of company data.",
+        "17) Disorderly behavior, drinking, or gambling within premises.",
+        "18) Altercation while on duty.",
+        "19) Making a false/fabricated complaint against another employee.",
+        "20) Refusing to give evidence or giving false evidence in investigations.",
+        "21) Going back on a complaint/statement/evidence without reason.",
+        "22) Failing to report loss or damage of Company property.",
+        "23) Breach of Regulations and established procedures.",
+        "24) Sabotage or willful damage to Company property/material.",
+        "25) Misrepresentation of facts.",
+        "26) Issue of unlawful instructions to subordinates.",
+        "27) Habitual late attendance.",
+        "28) Driving Company vehicles under the influence of liquor or drugs.",
+        "29) Dangerous or unauthorized driving/use of Company vehicles.",
+        "30) Misuse of authority or position for personal gain.",
+        "31) Submission of false/forged documents for personal gains.",
+        "32) Refusal to accept communication from the Company.",
+        "33) Competing business activity / conducting business during office hours.",
+        "34) Refusal to perform overtime after advance notification."
+    ];
+
+    const minorSteps = [
+        {step: "Step 1: Verbal Warning", detail: "Discussed privately with employee & recorded in file.", auth: "Supervisor / Dept Head", timeline: "Within 2 working days"},
+        {step: "Step 2: First Written Warning", detail: "If behavior is repeated or unsatisfactory.", auth: "Dept Head / HR", timeline: "Within 3 working days of recurrence"},
+{step: "Step 3: Final Written Warning", detail: "For continued misconduct or repeated violations.", auth: "Dept Head / HR", timeline: "Within 5 working days"},
+{step: "Step 4: Escalation", detail: "Persistent non-compliance leading to formal inquiry.", auth: "Disciplinary Committee", timeline: "Conclusion within 10 days"}
+];
+const majorSteps = [
+{step: "Step 1: Preliminary Investigation", detail: "Determine whether a formal inquiry is warranted.", auth: "HR / DC", timeline: "Within 3 working days of report"},
+{step: "Step 2: Preliminary Inquiry", detail: "Conducted if warranted.", auth: "HR / DC", timeline: "Within 3 working days of decision"},
+{step: "Step 3: Letter of Suspension", detail: "If necessary, suspend employee pending inquiry.", auth: "HR / DC", timeline: "Within 1 working day of decision"},
+{step: "Step 4: Charge Sheet Issued", detail: "Detailing offences and inviting explanation within stipulated time.", auth: "HR / DC", timeline: "Within 10 working days"},
+{step: "Step 5: Disciplinary Inquiry", detail: "A fair hearing conducted by an inquiring authority.", auth: "DC", timeline: "Within 15 working days of charge sheet"},
+{step: "Step 6: Decision & Recommendation", detail: "Based on inquiry findings.", auth: "DC", timeline: "Within 5 working days of conclusion"},
+{step: "Step 7: Action Taken", detail: "Written warning, Suspension, Demotion, or Dismissal.", auth: "HR", timeline: "Within 3 working days of decision"}
+];
+document.getElementById('caseDate').valueAsDate = new Date();
+function toggleSchedule() {
+const selectedSchedule = document.querySelector('input[name="schedule"]:checked').value;
+const subDropdown = document.getElementById('subOffence');
+const banner = document.getElementById('procedureBanner');
+const container = document.getElementById('checklistContainer');
+subDropdown.innerHTML = '';
+container.innerHTML = '';
+let activeOptions = [];
+let activeSteps = [];
+if (selectedSchedule === 'minor') {
+activeOptions = minorOffences;
+activeSteps = minorSteps;
+banner.className = "procedure-banner minor-banner";
+banner.innerText = "💡 Follow Procedure for Dealing with Minor Offences";
+} else {
+activeOptions = graveOffences;
+activeSteps = majorSteps;
+banner.className = "procedure-banner major-banner";
+banner.innerText = "⚠️ Follow Procedure for Dealing with Major Offences";
+}
+activeOptions.forEach(opt => {
+let el = document.createElement('option');
+el.textContent = opt;
+el.value = opt;
+subDropdown.appendChild(el);
+});
+activeSteps.forEach((s, idx) => {
+let card = document.createElement('div');
+card.className = "checklist-item";
+card.innerHTML = `
+
+
+
+${s.step}
+Responsible: ${s.auth} | Timeline: ${s.timeline}
+
+
+${s.detail}
+Remarks / Notes for this step:
+`;
+container.appendChild(card);
+});
+if(selectedSchedule === 'grave') {
+let disclaimer = document.createElement('p');
+disclaimer.style.cssText = "font-size:0.8rem; color:#64748b; font-style:italic; margin-top:15px; margin-bottom:0;";
+disclaimer.innerText = "📋 Note: Timelines may vary subject to the complexity of the offence or incident reported.";
+container.appendChild(disclaimer);
+}
+}
+function saveCaseLog() {
+const name = document.getElementById('empName').value;
+const id = document.getElementById('empId').value;
+if (!name || !id) {
+alert("❌ Operational Error: Please enter Employee Name and Employee ID before saving.");
+return;
+}
+alert(💾 Success: Form log entry captured for ${name} (${id}) under selected schedule guidelines.);
+}
+toggleSchedule();
+
+
+
+
