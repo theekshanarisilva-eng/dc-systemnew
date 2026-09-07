@@ -36,7 +36,7 @@
             padding-bottom: 10px;
         }
 
-        /* Form Styling */
+        /* Form Layout */
         .form-container {
             background: white;
             padding: 20px;
@@ -78,9 +78,18 @@
             font-size: 0.95em;
         }
 
-        .form-group textarea {
-            resize: vertical;
-            height: 38px;
+        .search-container {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            width: 300px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.95em;
         }
 
         button.btn-submit {
@@ -92,14 +101,13 @@
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
-            align-self: flex-end;
         }
 
         button.btn-submit:hover {
             background-color: #153552;
         }
 
-        /* Table Container Styling */
+        /* Table Architecture */
         .table-container {
             background: white;
             padding: 15px;
@@ -113,7 +121,7 @@
             border-collapse: collapse;
             font-size: 0.95em;
             background: white;
-            min-width: 1500px;
+            min-width: 1600px;
         }
 
         th {
@@ -152,7 +160,7 @@
 
     <h2>Disciplinary Case (DC) Register System</h2>
 
-    <!-- Interactive Case Input Form -->
+    <!-- Operational Data Form -->
     <div class="form-container">
         <div class="form-title">Log New Disciplinary Case</div>
         <form id="caseForm">
@@ -182,7 +190,7 @@
                 </div>
                 <div class="form-group">
                     <label for="natureAllegation">Nature of Allegation</label>
-                    <textarea id="natureAllegation" placeholder="Brief description..."></textarea>
+                    <input type="text" id="natureAllegation" placeholder="Brief description...">
                 </div>
                 <div class="form-group">
                     <label for="officer">Responsible Officer</label>
@@ -206,7 +214,7 @@
                 </div>
                 <div class="form-group">
                     <label for="reasonDelay">Reason for Delay</label>
-                    <input type="text" id="reasonDelay" placeholder="If overdue...">
+                    <input type="text" id="reasonDelay" placeholder="Management explanation...">
                 </div>
             </div>
             <div style="display: flex; justify-content: flex-end;">
@@ -215,7 +223,12 @@
         </form>
     </div>
 
-    <!-- Live Data Tracker Table -->
+    <!-- Active Management Search Controls -->
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by Employee, Case No, or Department...">
+    </div>
+
+    <!-- Register Matrix Data View -->
     <div class="table-container">
         <table id="registerTable">
             <thead>
@@ -239,32 +252,42 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- Data loaded dynamically -->
+                <!-- Javascript maps records dynamically here -->
             </tbody>
         </table>
     </div>
     <script>
-        // Initial cases injected from the existing minutes dataset
-        const initialCases = [
-            {id: "DC-2026-001", emp: "EMP-8842 (John Doe)", dept: "Operations", reported: "2026-08-01", type: "Major", desc: "Unauthorised absence & asset misuse", owner: "Sarah Jenkins", stage: "Inquiry Stage", s_date: "2026-08-20", sla: 30, comp: ""},
-            {id: "DC-2026-002", emp: "EMP-9115 (Jane Smith)", dept: "Finance", reported: "2026-08-15", type: "Minor", desc: "Repeated habitual tardiness", owner: "Michael Wijesinghe", stage: "Show Cause Issued", s_date: "2026-08-18", sla: 14, comp: ""},
-            {id: "DC-2026-003", emp: "EMP-7741 (David Perera)", dept: "Logistics", reported: "2026-07-10", type: "Major", desc: "Breach of safety protocols", owner: "Sarah Jenkins", stage: "Closed", s_date: "2026-08-05", sla: 30, comp: "2026-08-05"}
+        // Global Internal Database Instance
+        let registerDatabase = [
+            {id: "DC-2026-001", emp: "EMP-8842 (John Doe)", dept: "Operations", reported: "2026-08-01", type: "Major", desc: "Unauthorised absence & asset misuse", owner: "Sarah Jenkins", stage: "Inquiry Stage", s_date: "2026-08-20", sla: 30, comp: "", reason: ""},
+            {id: "DC-2026-002", emp: "EMP-9115 (Jane Smith)", dept: "Finance", reported: "2026-08-15", type: "Minor", desc: "Repeated habitual tardiness", owner: "Michael Wijesinghe", stage: "Show Cause Issued", s_date: "2026-08-18", sla: 14, comp: "", reason: ""},
+            {id: "DC-2026-003", emp: "EMP-7741 (David Perera)", dept: "Logistics", reported: "2026-07-10", type: "Major", desc: "Breach of safety protocols", owner: "Sarah Jenkins", stage: "Closed", s_date: "2026-08-05", sla: 30, comp: "2026-08-05", reason: "Complex evidence review required"}
         ];
 
-        const today = new Date();
-
+        // Core Calculation Engine
         function calculateMetrics(caseData) {
+            const today = new Date();
             const dateReported = new Date(caseData.reported);
-            const slaDays = parseInt(caseData.sla);
+            const slaDays = parseInt(caseData.sla || 0);
             
+            // Due Date: Date Reported + Applicable SLA
             const dueDate = new Date(dateReported);
             dueDate.setDate(dueDate.getDate() + slaDays);
-            const dueDateString = dueDate.toISOString().split('T')[0];
+            
+            let dueDateString = "-";
+            if (!isNaN(dueDate.getTime())) {
+                const yyyy = dueDate.getFullYear();
+                const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(dueDate.getDate()).padStart(2, '0');
+                dueDateString = `${yyyy}-${mm}-${dd}`;
+            }
 
+            // Days Elapsed Calculation
             const endDate = caseData.comp ? new Date(caseData.comp) : today;
             const timeDiff = endDate.getTime() - dateReported.getTime();
-            const daysElapsed = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+            const daysElapsed = !isNaN(timeDiff) ? Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24))) : 0;
 
+            // Operational Status Engine
             let status = "Green";
             let delayDays = 0;
 
@@ -275,13 +298,17 @@
                     const delayDiff = completionDate.getTime() - dueDate.getTime();
                     delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
                 }
-            } else {
-                if (today > dueDate) {
+            } else if (!isNaN(dueDate.getTime())) {
+                // Clear times for clean calculation matching openpyxl boundaries
+                const systemToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const targetedDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+                
+                if (systemToday > targetedDue) {
                     status = "Red";
-                    const delayDiff = today.getTime() - dueDate.getTime();
+                    const delayDiff = systemToday.getTime() - targetedDue.getTime();
                     delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
                 } else {
-                    const trackingDiff = dueDate.getTime() - today.getTime();
+                    const trackingDiff = targetedDue.getTime() - systemToday.getTime();
                     const daysRemaining = Math.floor(trackingDiff / (1000 * 60 * 60 * 24));
                     if (daysRemaining <= 5) {
                         status = "Amber";
@@ -292,62 +319,84 @@
             return { dueDateString, daysElapsed, status, delayDays };
         }
 
-        function appendCaseToTable(c) {
+        // DOM Render Pipeline
+        function renderTable(dataToRender) {
             const tbody = document.getElementById("tableBody");
-            const metrics = calculateMetrics(c);
-            
-            const row = document.createElement("tr");
+            tbody.innerHTML = ""; // Wipe table container clean before painting references
 
-            let statusBadgeClass = "badge-green";
-            if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
-            if (metrics.status === "Red") statusBadgeClass = "badge-red";
-            if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
+            dataToRender.forEach(c => {
+                const metrics = calculateMetrics(c);
+                const row = document.createElement("tr");
 
-            row.innerHTML = `
-                <td class="text-center" style="font-weight: bold;">${c.id}</td>
-                <td class="text-left">${c.emp}</td>
-                <td class="text-left">${c.dept}</td>
-                <td class="text-center">${c.reported}</td>
-                <td class="text-center">${c.type}</td>
-                <td class="text-left">${c.desc || ''}</td>
-                <td class="text-left">${c.owner || ''}</td>
-                <td class="text-left">${c.stage || ''}</td>
-                <td class="text-center">${c.s_date || ''}</td>
-                <td class="text-center">${c.sla}</td>
-                <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
-                <td class="text-center">${c.comp || '-'}</td>
-                <td class="text-center">${metrics.daysElapsed}</td>
-                <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
-                <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
-                <td class="text-left">${c.reason || ''}</td>
-            `;
-            tbody.appendChild(row);
+                let statusBadgeClass = "badge-green";
+                if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
+                if (metrics.status === "Red") statusBadgeClass = "badge-red";
+                if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
+
+                row.innerHTML = `
+                    <td class="text-center" style="font-weight: bold;">${c.id}</td>
+                    <td class="text-left">${c.emp}</td>
+                    <td class="text-left">${c.dept}</td>
+                    <td class="text-center">${c.reported}</td>
+                    <td class="text-center">${c.type}</td>
+                    <td class="text-left">${c.desc || '-'}</td>
+                    <td class="text-left">${c.owner || '-'}</td>
+                    <td class="text-left">${c.stage || '-'}</td>
+                    <td class="text-center">${c.s_date || '-'}</td>
+                    <td class="text-center">${c.sla}</td>
+                    <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
+                    <td class="text-center">${c.comp || '-'}</td>
+                    <td class="text-center">${metrics.daysElapsed}</td>
+                    <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
+                    <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
+                    <td class="text-left">${c.reason || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
         }
 
-        initialCases.forEach(appendCaseToTable);
+        // Live Dynamic Engine Filtering
+        document.getElementById("searchInput").addEventListener("input", function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const filteredData = registerDatabase.filter(item => 
+                item.id.toLowerCase().includes(query) || 
+                item.emp.toLowerCase().includes(query) || 
+                item.dept.toLowerCase().includes(query)
+            );
+            renderTable(filteredData);
+        });
 
+        // Form Submission Interceptor Pipeline
         document.getElementById("caseForm").addEventListener("submit", function(e) {
             e.preventDefault();
 
             const newCase = {
-                id: document.getElementById("caseNo").value,
-                emp: document.getElementById("employee").value,
-                dept: document.getElementById("department").value,
+                id: document.getElementById("caseNo").value.trim(),
+                emp: document.getElementById("employee").value.trim(),
+                dept: document.getElementById("department").value.trim(),
                 reported: document.getElementById("dateReported").value,
                 type: document.getElementById("typeOffence").value,
-                desc: document.getElementById("natureAllegation").value,
-                owner: document.getElementById("officer").value,
-                stage: document.getElementById("currentStage").value,
+                desc: document.getElementById("natureAllegation").value.trim(),
+                owner: document.getElementById("officer").value.trim(),
+                stage: document.getElementById("currentStage").value.trim(),
                 s_date: document.getElementById("dateStageCommenced").value,
                 sla: document.getElementById("applicableSla").value,
                 comp: document.getElementById("completionDate").value,
-                reason: document.getElementById("reasonDelay").value
+                reason: document.getElementById("reasonDelay").value.trim()
             };
 
-            appendCaseToTable(newCase);
+            // Add straight to system tracking array instance
+            registerDatabase.push(newCase);
+            
+            // Re-render dataset and wipe form input elements clean
+            renderTable(registerDatabase);
             this.reset();
-            document.getElementById("applicableSla").value = "14";
+            document.getElementById("applicableSla").value = "14"; // Enforce HR default
+            document.getElementById("searchInput").value = "";     // Reset filter search values
         });
+
+        // Initial Data Bootstrap Run
+        renderTable(registerDatabase);
     </script>
 </body>
 </html>
