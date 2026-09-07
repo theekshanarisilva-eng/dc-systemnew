@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -113,7 +113,7 @@
             border-collapse: collapse;
             font-size: 0.95em;
             background: white;
-            min-width: 1500px; /* Ensures space matching the excel width strategy */
+            min-width: 1500px;
         }
 
         th {
@@ -131,11 +131,9 @@
             vertical-align: middle;
         }
 
-        /* Alignment Utilities */
         .text-center { text-align: center; }
         .text-left { text-align: left; }
 
-        /* Dynamic Status Badges */
         .badge {
             padding: 6px 12px;
             border-radius: 4px;
@@ -241,26 +239,115 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- Pre-existing Minutes and Cases generated here dynamic via script -->
+                <!-- Data loaded dynamically -->
             </tbody>
         </table>
     </div>
-
     <script>
-        // Pre-existing minutes dataset matching your exact python array
+        // Initial cases injected from the existing minutes dataset
         const initialCases = [
             {id: "DC-2026-001", emp: "EMP-8842 (John Doe)", dept: "Operations", reported: "2026-08-01", type: "Major", desc: "Unauthorised absence & asset misuse", owner: "Sarah Jenkins", stage: "Inquiry Stage", s_date: "2026-08-20", sla: 30, comp: ""},
             {id: "DC-2026-002", emp: "EMP-9115 (Jane Smith)", dept: "Finance", reported: "2026-08-15", type: "Minor", desc: "Repeated habitual tardiness", owner: "Michael Wijesinghe", stage: "Show Cause Issued", s_date: "2026-08-18", sla: 14, comp: ""},
             {id: "DC-2026-003", emp: "EMP-7741 (David Perera)", dept: "Logistics", reported: "2026-07-10", type: "Major", desc: "Breach of safety protocols", owner: "Sarah Jenkins", stage: "Closed", s_date: "2026-08-05", sla: 30, comp: "2026-08-05"}
         ];
 
-        // System date engine 
         const today = new Date();
 
         function calculateMetrics(caseData) {
             const dateReported = new Date(caseData.reported);
             const slaDays = parseInt(caseData.sla);
             
-            // 1. Calculate Due Date (Reported Date + SLA Days)
             const dueDate = new Date(dateReported);
             dueDate.setDate(dueDate.getDate() + slaDays);
+            const dueDateString = dueDate.toISOString().split('T')[0];
+
+            const endDate = caseData.comp ? new Date(caseData.comp) : today;
+            const timeDiff = endDate.getTime() - dateReported.getTime();
+            const daysElapsed = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+
+            let status = "Green";
+            let delayDays = 0;
+
+            if (caseData.comp) {
+                status = "Closed";
+                const completionDate = new Date(caseData.comp);
+                if (completionDate > dueDate) {
+                    const delayDiff = completionDate.getTime() - dueDate.getTime();
+                    delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
+                }
+            } else {
+                if (today > dueDate) {
+                    status = "Red";
+                    const delayDiff = today.getTime() - dueDate.getTime();
+                    delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
+                } else {
+                    const trackingDiff = dueDate.getTime() - today.getTime();
+                    const daysRemaining = Math.floor(trackingDiff / (1000 * 60 * 60 * 24));
+                    if (daysRemaining <= 5) {
+                        status = "Amber";
+                    }
+                }
+            }
+
+            return { dueDateString, daysElapsed, status, delayDays };
+        }
+
+        function appendCaseToTable(c) {
+            const tbody = document.getElementById("tableBody");
+            const metrics = calculateMetrics(c);
+            
+            const row = document.createElement("tr");
+
+            let statusBadgeClass = "badge-green";
+            if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
+            if (metrics.status === "Red") statusBadgeClass = "badge-red";
+            if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
+
+            row.innerHTML = `
+                <td class="text-center" style="font-weight: bold;">${c.id}</td>
+                <td class="text-left">${c.emp}</td>
+                <td class="text-left">${c.dept}</td>
+                <td class="text-center">${c.reported}</td>
+                <td class="text-center">${c.type}</td>
+                <td class="text-left">${c.desc || ''}</td>
+                <td class="text-left">${c.owner || ''}</td>
+                <td class="text-left">${c.stage || ''}</td>
+                <td class="text-center">${c.s_date || ''}</td>
+                <td class="text-center">${c.sla}</td>
+                <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
+                <td class="text-center">${c.comp || '-'}</td>
+                <td class="text-center">${metrics.daysElapsed}</td>
+                <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
+                <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
+                <td class="text-left">${c.reason || ''}</td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        initialCases.forEach(appendCaseToTable);
+
+        document.getElementById("caseForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+
+            const newCase = {
+                id: document.getElementById("caseNo").value,
+                emp: document.getElementById("employee").value,
+                dept: document.getElementById("department").value,
+                reported: document.getElementById("dateReported").value,
+                type: document.getElementById("typeOffence").value,
+                desc: document.getElementById("natureAllegation").value,
+                owner: document.getElementById("officer").value,
+                stage: document.getElementById("currentStage").value,
+                s_date: document.getElementById("dateStageCommenced").value,
+                sla: document.getElementById("applicableSla").value,
+                comp: document.getElementById("completionDate").value,
+                reason: document.getElementById("reasonDelay").value
+            };
+
+            appendCaseToTable(newCase);
+            this.reset();
+            document.getElementById("applicableSla").value = "14";
+        });
+    </script>
+</body>
+</html>
