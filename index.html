@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DC Case Register System</title>
+    <title>DC Case Register System - Advanced CRUD</title>
     <style>
         :root {
             --primary-color: #1f4e78;
             --border-color: #d9d9d9;
             --text-color: #333333;
-            --bg-light: #f9f9f9;
+            --bg-light: #f5f7fa;
             
-            /* Status Colors */
+            /* Status System Colors */
             --status-green: #d4edda;
             --status-green-text: #155724;
             --status-amber: #fff3cd;
@@ -26,7 +26,7 @@
             font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
             margin: 20px;
             color: var(--text-color);
-            background-color: #f5f7fa;
+            background-color: var(--bg-light);
         }
 
         h2 {
@@ -36,7 +36,6 @@
             padding-bottom: 10px;
         }
 
-        /* Form Layout */
         .form-container {
             background: white;
             padding: 20px;
@@ -70,7 +69,7 @@
             font-weight: 600;
         }
 
-        .form-group input, .form-group select, .form-group textarea {
+        .form-group input, .form-group select {
             padding: 8px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
@@ -78,36 +77,41 @@
             font-size: 0.95em;
         }
 
-        .search-container {
+        .action-bar {
             margin-bottom: 15px;
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
         }
 
         .search-input {
             padding: 8px 12px;
-            width: 300px;
+            width: 350px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 0.95em;
         }
 
-        button.btn-submit {
-            background-color: var(--primary-color);
-            color: white;
+        .btn {
+            padding: 9px 18px;
             border: none;
-            padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            transition: background 0.2s;
+            transition: background 0.2s, color 0.2s;
+            font-size: 0.9em;
         }
 
-        button.btn-submit:hover {
-            background-color: #153552;
-        }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #153552; }
+        .btn-edit { background-color: #ffc107; color: #212529; padding: 4px 8px; font-size: 0.8em; margin-right: 4px; }
+        .btn-edit:hover { background-color: #e0a800; }
+        .btn-delete { background-color: #dc3545; color: white; padding: 4px 8px; font-size: 0.8em; }
+        .btn-delete:hover { background-color: #bd2130; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #5a6268; }
 
-        /* Table Architecture */
         .table-container {
             background: white;
             padding: 15px;
@@ -121,7 +125,7 @@
             border-collapse: collapse;
             font-size: 0.95em;
             background: white;
-            min-width: 1600px;
+            min-width: 1750px;
         }
 
         th {
@@ -134,13 +138,14 @@
         }
 
         td {
-            padding: 10px;
+            padding: 8px 10px;
             border: 1px solid var(--border-color);
             vertical-align: middle;
         }
 
         .text-center { text-align: center; }
         .text-left { text-align: left; }
+        .actions-cell { white-space: nowrap; text-align: center; }
 
         .badge {
             padding: 6px 12px;
@@ -160,10 +165,11 @@
 
     <h2>Disciplinary Case (DC) Register System</h2>
 
-    <!-- Operational Data Form -->
+    <!-- Dynamic Operational Data Entry Form -->
     <div class="form-container">
-        <div class="form-title">Log New Disciplinary Case</div>
+        <div class="form-title" id="formHeader">Log New Disciplinary Case</div>
         <form id="caseForm">
+            <input type="hidden" id="editRowIndex" value="">
             <div class="form-grid">
                 <div class="form-group">
                     <label for="caseNo">Case No.</label>
@@ -175,7 +181,7 @@
                 </div>
                 <div class="form-group">
                     <label for="department">Department</label>
-                    <input type="text" id="department" placeholder="e.g., HR / Operations" required>
+                    <input type="text" id="department" placeholder="e.g., Operations" required>
                 </div>
                 <div class="form-group">
                     <label for="dateReported">Date Reported</label>
@@ -198,7 +204,7 @@
                 </div>
                 <div class="form-group">
                     <label for="currentStage">Current Stage</label>
-                    <input type="text" id="currentStage" placeholder="e.g., Investigation">
+                    <input type="text" id="currentStage" placeholder="e.g., Show Cause Issued">
                 </div>
                 <div class="form-group">
                     <label for="dateStageCommenced">Date Stage Commenced</label>
@@ -217,22 +223,24 @@
                     <input type="text" id="reasonDelay" placeholder="Management explanation...">
                 </div>
             </div>
-            <div style="display: flex; justify-content: flex-end;">
-                <button type="submit" class="btn-submit">Add Case to Register</button>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" id="btnCancelEdit" class="btn btn-secondary" style="display: none;">Cancel Edit</button>
+                <button type="submit" id="btnSubmitForm" class="btn btn-primary">Add Case to Register</button>
             </div>
         </form>
     </div>
 
-    <!-- Active Management Search Controls -->
-    <div class="search-container">
+    <!-- Active Management Layout Bar -->
+    <div class="action-bar">
         <input type="text" id="searchInput" class="search-input" placeholder="Search by Employee, Case No, or Department...">
     </div>
 
-    <!-- Register Matrix Data View -->
+    <!-- Master Tracking Register Matrix -->
     <div class="table-container">
         <table id="registerTable">
             <thead>
                 <tr>
+                    <th style="min-width: 120px;">Actions</th>
                     <th>Case No.</th>
                     <th>Employee / Reference</th>
                     <th>Department</th>
@@ -252,151 +260,203 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- Javascript maps records dynamically here -->
+                <!-- Javascript maps matrix data arrays inside here -->
             </tbody>
         </table>
     </div>
-    <script>
-        // Global Internal Database Instance
-        let registerDatabase = [
-            {id: "DC-2026-001", emp: "EMP-8842 (John Doe)", dept: "Operations", reported: "2026-08-01", type: "Major", desc: "Unauthorised absence & asset misuse", owner: "Sarah Jenkins", stage: "Inquiry Stage", s_date: "2026-08-20", sla: 30, comp: "", reason: ""},
-            {id: "DC-2026-002", emp: "EMP-9115 (Jane Smith)", dept: "Finance", reported: "2026-08-15", type: "Minor", desc: "Repeated habitual tardiness", owner: "Michael Wijesinghe", stage: "Show Cause Issued", s_date: "2026-08-18", sla: 14, comp: "", reason: ""},
-            {id: "DC-2026-003", emp: "EMP-7741 (David Perera)", dept: "Logistics", reported: "2026-07-10", type: "Major", desc: "Breach of safety protocols", owner: "Sarah Jenkins", stage: "Closed", s_date: "2026-08-05", sla: 30, comp: "2026-08-05", reason: "Complex evidence review required"}
-        ];
-
-        // Core Calculation Engine
-        function calculateMetrics(caseData) {
-            const today = new Date();
-            const dateReported = new Date(caseData.reported);
-            const slaDays = parseInt(caseData.sla || 0);
-            
-            // Due Date: Date Reported + Applicable SLA
-            const dueDate = new Date(dateReported);
-            dueDate.setDate(dueDate.getDate() + slaDays);
-            
-            let dueDateString = "-";
-            if (!isNaN(dueDate.getTime())) {
-                const yyyy = dueDate.getFullYear();
-                const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(dueDate.getDate()).padStart(2, '0');
-                dueDateString = `${yyyy}-${mm}-${dd}`;
-            }
-
-            // Days Elapsed Calculation
-            const endDate = caseData.comp ? new Date(caseData.comp) : today;
-            const timeDiff = endDate.getTime() - dateReported.getTime();
-            const daysElapsed = !isNaN(timeDiff) ? Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24))) : 0;
-
-            // Operational Status Engine
-            let status = "Green";
-            let delayDays = 0;
-
-            if (caseData.comp) {
-                status = "Closed";
-                const completionDate = new Date(caseData.comp);
-                if (completionDate > dueDate) {
-                    const delayDiff = completionDate.getTime() - dueDate.getTime();
-                    delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
-                }
-            } else if (!isNaN(dueDate.getTime())) {
-                // Clear times for clean calculation matching openpyxl boundaries
-                const systemToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const targetedDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-                
-                if (systemToday > targetedDue) {
-                    status = "Red";
-                    const delayDiff = systemToday.getTime() - targetedDue.getTime();
-                    delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
-                } else {
-                    const trackingDiff = targetedDue.getTime() - systemToday.getTime();
-                    const daysRemaining = Math.floor(trackingDiff / (1000 * 60 * 60 * 24));
-                    if (daysRemaining <= 5) {
-                        status = "Amber";
-                    }
-                }
-            }
-
-            return { dueDateString, daysElapsed, status, delayDays };
-        }
-
-        // DOM Render Pipeline
-        function renderTable(dataToRender) {
-            const tbody = document.getElementById("tableBody");
-            tbody.innerHTML = ""; // Wipe table container clean before painting references
-
-            dataToRender.forEach(c => {
-                const metrics = calculateMetrics(c);
-                const row = document.createElement("tr");
-
-                let statusBadgeClass = "badge-green";
-                if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
-                if (metrics.status === "Red") statusBadgeClass = "badge-red";
-                if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
-
-                row.innerHTML = `
-                    <td class="text-center" style="font-weight: bold;">${c.id}</td>
-                    <td class="text-left">${c.emp}</td>
-                    <td class="text-left">${c.dept}</td>
-                    <td class="text-center">${c.reported}</td>
-                    <td class="text-center">${c.type}</td>
-                    <td class="text-left">${c.desc || '-'}</td>
-                    <td class="text-left">${c.owner || '-'}</td>
-                    <td class="text-left">${c.stage || '-'}</td>
-                    <td class="text-center">${c.s_date || '-'}</td>
-                    <td class="text-center">${c.sla}</td>
-                    <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
-                    <td class="text-center">${c.comp || '-'}</td>
-                    <td class="text-center">${metrics.daysElapsed}</td>
-                    <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
-                    <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
-                    <td class="text-left">${c.reason || '-'}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // Live Dynamic Engine Filtering
-        document.getElementById("searchInput").addEventListener("input", function(e) {
-            const query = e.target.value.toLowerCase().trim();
-            const filteredData = registerDatabase.filter(item => 
-                item.id.toLowerCase().includes(query) || 
-                item.emp.toLowerCase().includes(query) || 
-                item.dept.toLowerCase().includes(query)
-            );
-            renderTable(filteredData);
-        });
-
-        // Form Submission Interceptor Pipeline
-        document.getElementById("caseForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-
-            const newCase = {
-                id: document.getElementById("caseNo").value.trim(),
-                emp: document.getElementById("employee").value.trim(),
-                dept: document.getElementById("department").value.trim(),
-                reported: document.getElementById("dateReported").value,
-                type: document.getElementById("typeOffence").value,
-                desc: document.getElementById("natureAllegation").value.trim(),
-                owner: document.getElementById("officer").value.trim(),
-                stage: document.getElementById("currentStage").value.trim(),
-                s_date: document.getElementById("dateStageCommenced").value,
-                sla: document.getElementById("applicableSla").value,
-                comp: document.getElementById("completionDate").value,
-                reason: document.getElementById("reasonDelay").value.trim()
-            };
-
-            // Add straight to system tracking array instance
-            registerDatabase.push(newCase);
-            
-            // Re-render dataset and wipe form input elements clean
-            renderTable(registerDatabase);
-            this.reset();
-            document.getElementById("applicableSla").value = "14"; // Enforce HR default
-            document.getElementById("searchInput").value = "";     // Reset filter search values
-        });
-
-        // Initial Data Bootstrap Run
-        renderTable(registerDatabase);
-    </script>
 </body>
 </html>
+<script>
+    // Central Repository Engine Instance Array 
+    let registerDatabase = [
+        {id: "DC-2026-001", emp: "EMP-8842 (John Doe)", dept: "Operations", reported: "2026-08-01", type: "Major", desc: "Unauthorised absence & asset misuse", owner: "Sarah Jenkins", stage: "Inquiry Stage", s_date: "2026-08-20", sla: 30, comp: "", reason: ""},
+        {id: "DC-2026-002", emp: "EMP-9115 (Jane Smith)", dept: "Finance", reported: "2026-08-15", type: "Minor", desc: "Repeated habitual tardiness", owner: "Michael Wijesinghe", stage: "Show Cause Issued", s_date: "2026-08-18", sla: 14, comp: "", reason: ""},
+        {id: "DC-2026-003", emp: "EMP-7741 (David Perera)", dept: "Logistics", reported: "2026-07-10", type: "Major", desc: "Breach of safety protocols", owner: "Sarah Jenkins", stage: "Closed", s_date: "2026-08-05", sla: 30, comp: "2026-08-05", reason: "Complex evidence review required"}
+    ];
+
+    // Computational SLA Analytics Engine
+    function calculateMetrics(caseData) {
+        const today = new Date();
+        const dateReported = new Date(caseData.reported);
+        const slaDays = parseInt(caseData.sla || 0);
+        
+        const dueDate = new Date(dateReported);
+        dueDate.setDate(dueDate.getDate() + slaDays);
+        
+        let dueDateString = "-";
+        if (!isNaN(dueDate.getTime())) {
+            const yyyy = dueDate.getFullYear();
+            const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(dueDate.getDate()).padStart(2, '0');
+            dueDateString = `${yyyy}-${mm}-${dd}`;
+        }
+
+        const endDate = caseData.comp ? new Date(caseData.comp) : today;
+        const timeDiff = endDate.getTime() - dateReported.getTime();
+        const daysElapsed = !isNaN(timeDiff) ? Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24))) : 0;
+
+        let status = "Green";
+        let delayDays = 0;
+
+        if (caseData.comp) {
+            status = "Closed";
+            const completionDate = new Date(caseData.comp);
+            if (completionDate > dueDate) {
+                const delayDiff = completionDate.getTime() - dueDate.getTime();
+                delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
+            }
+        } else if (!isNaN(dueDate.getTime())) {
+            const systemToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const targetedDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+            
+            if (systemToday > targetedDue) {
+                status = "Red";
+                const delayDiff = systemToday.getTime() - targetedDue.getTime();
+                delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
+            } else {
+                const trackingDiff = targetedDue.getTime() - systemToday.getTime();
+                const daysRemaining = Math.floor(trackingDiff / (1000 * 60 * 60 * 24));
+                if (daysRemaining <= 5) {
+                    status = "Amber";
+                }
+            }
+        }
+
+        return { dueDateString, daysElapsed, status, delayDays };
+    }
+
+    // Structural Rendering Pipeline Engine
+    function renderTable(dataToRender) {
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = ""; 
+
+        dataToRender.forEach((c) => {
+            const actualIndex = registerDatabase.findIndex(item => item.id === c.id);
+            const metrics = calculateMetrics(c);
+            const row = document.createElement("tr");
+
+            let statusBadgeClass = "badge-green";
+            if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
+            if (metrics.status === "Red") statusBadgeClass = "badge-red";
+            if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
+
+            row.innerHTML = `
+                <td class="actions-cell">
+                    <button class="btn btn-edit" onclick="triggerEditRecord(${actualIndex})">Edit</button>
+                    <button class="btn btn-delete" onclick="triggerDeleteRecord(${actualIndex})">Remove</button>
+                </td>
+                <td class="text-center" style="font-weight: bold;">${c.id}</td>
+                <td class="text-left">${c.emp}</td>
+                <td class="text-left">${c.dept}</td>
+                <td class="text-center">${c.reported}</td>
+                <td class="text-center">${c.type}</td>
+                <td class="text-left">${c.desc || '-'}</td>
+                <td class="text-left">${c.owner || '-'}</td>
+                <td class="text-left">${c.stage || '-'}</td>
+                <td class="text-center">${c.s_date || '-'}</td>
+                <td class="text-center">${c.sla}</td>
+                <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
+                <td class="text-center">${c.comp || '-'}</td>
+                <td class="text-center">${metrics.daysElapsed}</td>
+                <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
+                <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
+                <td class="text-left">${c.reason || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+</script>
+<script>
+    // Live Dynamic Filtering Execution Engine
+    document.getElementById("searchInput").addEventListener("input", function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        const filteredData = registerDatabase.filter(item => 
+            item.id.toLowerCase().includes(query) || 
+            item.emp.toLowerCase().includes(query) || 
+            item.dept.toLowerCase().includes(query)
+        );
+        renderTable(filteredData);
+    });
+
+    // Interactive Data Form Event Routing Hooks
+    window.triggerEditRecord = function(index) {
+        const targetRecord = registerDatabase[index];
+        
+        document.getElementById("editRowIndex").value = index;
+        document.getElementById("caseNo").value = targetRecord.id;
+        document.getElementById("employee").value = targetRecord.emp;
+        document.getElementById("department").value = targetRecord.dept;
+        document.getElementById("dateReported").value = targetRecord.reported;
+        document.getElementById("typeOffence").value = targetRecord.type;
+        document.getElementById("natureAllegation").value = targetRecord.desc;
+        document.getElementById("officer").value = targetRecord.owner;
+        document.getElementById("currentStage").value = targetRecord.stage;
+        document.getElementById("dateStageCommenced").value = targetRecord.s_date;
+        document.getElementById("applicableSla").value = targetRecord.sla;
+        document.getElementById("completionDate").value = targetRecord.comp;
+        document.getElementById("reasonDelay").value = targetRecord.reason;
+
+        document.getElementById("formHeader").innerText = "Modify Case Details";
+        document.getElementById("btnSubmitForm").innerText = "Save Changes";
+        document.getElementById("btnCancelEdit").style.display = "inline-block";
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.triggerDeleteRecord = function(index) {
+        if (confirm(`Confirm permanent removal of Case No: ${registerDatabase[index].id}?`)) {
+            registerDatabase.splice(index, 1);
+            renderTable(registerDatabase);
+            clearFormState();
+        }
+    };
+
+    function clearFormState() {
+        document.getElementById("caseForm").reset();
+        document.getElementById("editRowIndex").value = "";
+        document.getElementById("applicableSla").value = "14";
+        document.getElementById("formHeader").innerText = "Log New Disciplinary Case";
+        document.getElementById("btnSubmitForm").innerText = "Add Case to Register";
+        document.getElementById("btnCancelEdit").style.display = "none";
+    }
+
+    document.getElementById("btnCancelEdit").addEventListener("click", clearFormState);
+
+    // Form Submissions Lifecycle Pipeline (Create vs Update Validation)
+    document.getElementById("caseForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const targetIndexStr = document.getElementById("editRowIndex").value;
+        const caseData = {
+            id: document.getElementById("caseNo").value.trim(),
+            emp: document.getElementById("employee").value.trim(),
+            dept: document.getElementById("department").value.trim(),
+            reported: document.getElementById("dateReported").value,
+            type: document.getElementById("typeOffence").value,
+            desc: document.getElementById("natureAllegation").value.trim(),
+            owner: document.getElementById("officer").value.trim(),
+            stage: document.getElementById("currentStage").value.trim(),
+            s_date: document.getElementById("dateStageCommenced").value,
+            sla: document.getElementById("applicableSla").value,
+            comp: document.getElementById("completionDate").value,
+            reason: document.getElementById("reasonDelay").value.trim()
+        };
+
+        if (targetIndexStr !== "") {
+            registerDatabase[parseInt(targetIndexStr)] = caseData;
+        } else {
+            if (registerDatabase.some(item => item.id.toLowerCase() === caseData.id.toLowerCase())) {
+                alert("A disciplinary case with this precise ID number already exists.");
+                return;
+            }
+            registerDatabase.push(caseData);
+        }
+
+        renderTable(registerDatabase);
+        clearFormState();
+        document.getElementById("searchInput").value = ""; 
+    });
+
+    // Initialize System Table Data Base Sync
+    renderTable(registerDatabase);
+</script>
