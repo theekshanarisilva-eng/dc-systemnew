@@ -101,6 +101,8 @@
         .btn-delete:hover { background-color: #bd2130; }
         .btn-secondary { background-color: #6c757d; color: white; }
         .btn-secondary:hover { background-color: #5a6268; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-success:hover { background-color: #218838; }
         .table-container {
             background: white;
             padding: 15px;
@@ -137,13 +139,33 @@
             font-weight: bold;
             display: inline-block;
             text-align: center;
-            width: 80px;
+            width: 90px;
         }
         .badge-green { background-color: var(--status-green); color: var(--status-green-text); }
         .badge-amber { background-color: var(--status-amber); color: var(--status-amber-text); }
         .badge-red { background-color: var(--status-red); color: var(--status-red-text); }
         .badge-closed { background-color: var(--status-closed); color: var(--status-closed-text); }
+        .loading-text {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .metrics-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .counter-card {
+            background: #e9eef4;
+            border: 1px solid #b8c9d9;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
     </style>
+    <!-- SheetJS Library for Natively Exporting Formatted Excel Files -->
+    <script src="https://cloudflare.com"></script>
 </head>
 <body>
     <h2>Disciplinary Case (DC) Register System</h2>
@@ -202,23 +224,32 @@
                 </div>
                 <div class="form-group">
                     <label for="reasonDelay">Reason for Delay</label>
-                    <input type="text" id="reasonDelay" placeholder="Explanatory context notes">
+                    <input type="text" id="reasonDelay" placeholder="Explanation if delayed">
                 </div>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" id="btnCancelEdit" class="btn btn-secondary" style="display: none;">Cancel Edit</button>
-                <button type="submit" id="btnSubmitForm" class="btn btn-primary">Add Case to Register</button>
+            <div>
+                <button type="submit" class="btn btn-primary" id="saveBtn">Add Case to Register</button>
+                <button type="button" class="btn btn-secondary" id="cancelBtn" style="display:none;">Cancel Edit</button>
             </div>
         </form>
     </div>
-    <div class="action-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="Search by Employee, Case No, Department or Allegation...">
+    <div class="metrics-bar">
+        <div class="counter-card">Total Disciplinary Cases: <span id="totalCasesCount">0</span></div>
     </div>
+
+    <div class="action-bar">
+        <div>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by Case No, Employee, Dept...">
+            <button type="button" class="btn btn-success" id="exportBtn" style="margin-left: 10px;">Export to Excel</button>
+        </div>
+        <div id="loadingStatus" class="loading-text" style="display:none;">Syncing cloud data...</div>
+    </div>
+
     <div class="table-container">
-        <table id="registerTable">
+        <table id="caseTable">
             <thead>
                 <tr>
-                    <th style="min-width: 120px;">Actions</th>
+                    <th>Actions</th>
                     <th>Case No.</th>
                     <th>Employee / Reference</th>
                     <th>Department</th>
@@ -237,238 +268,496 @@
                     <th>Reason for Delay</th>
                 </tr>
             </thead>
-            <tbody id="tableBody"></tbody>
+            <tbody id="tableBody">
+                <tr><td colspan="17" class="text-center">Loading database configurations...</td></tr>
+            </tbody>
         </table>
     </div>
     <script>
-        let registerDatabase = [
-            {id: "a", emp: "U.V.S.D.Jayarathne (8230)", dept: "Operations", reported: "", type: "Major", desc: "Misappropriation of collected premium Rs. 464,786.44", owner: "CLO / CHRO", stage: "Closure Verification", s_date: "2026-07-24", sla: "", comp: "", reason: "Pending final confirmation from HIA"},
-            {id: "b", emp: "K.Vijayadhasan (8459)", dept: "PI Counter Underwriting - Hatton", reported: "", type: "Major", desc: "Misappropriation of collected Premium Rs. 215,514.76", owner: "CLO", stage: "Escalated to IGP / DIG Nuwara Eliya", s_date: "2026-07-31", sla: "", comp: "", reason: "Awaiting police execution updates"},
-            {id: "c", emp: "Sachinthana Piyasena (8231)", dept: "Rathnapura Regional Branch", reported: "", type: "Major", desc: "Misappropriation of collected Premium - Balance outstanding tracking", owner: "CLO / HR", stage: "Court Case Recovery (No 25/492/3/24)", s_date: "2026-07-03", sla: "", comp: "", reason: "Warrant issued via Police Station Nivithigala; Chethi to confirm gratuity"},
-            {id: "d", emp: "N K Dineth Sachitha (8764)", dept: "Sales Promotion", reported: "", type: "Major", desc: "Document forgery - Code removal and payment holds", owner: "CLO / HIA", stage: "Resigned - Exit Clearance BAC Submission", s_date: "2026-07-23", sla: "", comp: "", reason: "Forwarded to Board Audit Committee by 27th July 2026"},
-            {id: "e", emp: "A.R.T Silva (8581)", dept: "Administration", reported: "", type: "Minor", desc: "Misappropriation of Company Property (Official phone lines for personal overseas calls to Italy) - Rs.112,061.60", owner: "CLO / HIA", stage: "Recommended for Closure", s_date: "2026-07-31", sla: "", comp: "", reason: "Perpetrator out of country; awaiting BAC minute execution approval"},
-            {id: "f", emp: "HTP Sandaruwan (9924)", dept: "Embilipitiya Regional Branch", reported: "2026-02-13", type: "Major", desc: "Fact Finding Review Report on suspected fraudulent motor insurance claim", owner: "CLO", stage: "Reviewing legal opinion on lack of admissible evidence", s_date: "2026-08-07", sla: "", comp: "", reason: "MBSL source photo constraint prevents direct police disclosure"},
-            {id: "h", emp: "M R K Jayarathna (9592)", dept: "Fire & Misc", reported: "2026-02-27", type: "Major", desc: "Customer complaint regarding unconsented placement of policy under broker code", owner: "CLO", stage: "Closed", s_date: "2026-06-09", sla: "", comp: "2026-06-09", reason: "Resigned w.e.f 4th July 2026. Warning issued and HIA notified"},
-            {id: "o", emp: "Ms Asanga Opatha (9354) - Case 11", dept: "Administration", reported: "2026-04-10", type: "Minor", desc: "Professional Negligence: Failure to provide net book value of 24 unreturned tablets to Finance", owner: "CHRO / Finance", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "j", emp: "A.D.K.N. Dasanayaka (800216)", dept: "Kuliyapitiya Regional Branch", reported: "2026-04-10", type: "Major", desc: "Contact Centre KPI tracking - Misappropriated premiums on cancelled policies total Rs. 40,109.00", owner: "CLO / Contact Centre", stage: "Legal Action Follow-up Review", s_date: "2026-08-03", sla: "", comp: "", reason: "Salary held; call records and file passed to CLO for legal filing"},
-            {id: "L", emp: "W.A.K.D. Karunarathna (9182)", dept: "Gampaha Branch", reported: "2026-03-20", type: "Major", desc: "Premium misappropriation - Returned policy cheques and excess account tracking verification", owner: "CLO / Finance / MUW", stage: "Closed", s_date: "2026-05-19", sla: "", comp: "2026-05-19", reason: "Amounts fully set off into new policies; HIA notified for closure"},
-            {id: "M", emp: "Thilina Thennakoon (8517)", dept: "Pilimathalawa Regional Branch", reported: "2025-10-01", type: "Major", desc: "Customer malpractice complaint regarding alloy wheel repair arrangement profiling", owner: "CLO / Finance", stage: "Closed - Forwarded to HIA for Audit Committee", s_date: "2026-05-11", sla: "", comp: "2026-05-11", reason: "Salary deductions completed and credited to miscellaneous income GL account"},
-            {id: "n", emp: "Ms Asanga Opatha (9354) - Case 1", dept: "Administration", reported: "2026-04-10", type: "Minor", desc: "Professional Negligence: Unbudgeted purchase of 2000 memo cubes (Rs. 1,440,000) without upfront OMC approval", owner: "DC (CHRO)", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "11", comp: "2026-05-15", reason: "Merged into multi-count warning framework"},
-            {id: "q", emp: "Ms Asanga Opatha (9354) - Case 2", dept: "Administration", reported: "2026-04-24", type: "Minor", desc: "Professional Negligence: Professional dispute with Ms. Nahaziya regarding Melisiripura PLC staff relocation", owner: "CHRO", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "", comp: "2026-05-15", reason: "Merged into multi-count warning framework"},
-            {id: "S", emp: "Ms Asanga Opatha (9354) - Case 3", dept: "Administration", reported: "2026-04-26", type: "Minor", desc: "Professional Negligence: Unstable iPad internet connection execution for Director Nayangani Wickramasinghe", owner: "Disciplinary Committee", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "", comp: "2026-05-15", reason: "Merged into multi-count warning framework"},
-            {id: "t", emp: "Ms Asanga Opatha (9354) - Case 4", dept: "Administration", reported: "2026-04-30", type: "Minor", desc: "Professional Negligence: Erroneous Fixed Asset Disposal Board Paper entries without IT consent", owner: "CHRO", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "", comp: "2026-05-15", reason: "Merged into multi-count warning framework"}
-        ];
-        let databasePart2 = [
-            {id: "T", emp: "R. E. Prasly (9733) / Chanuka (800037)", dept: "Fire & Misc / Finance", reported: "2026-04-28", type: "Major", desc: "M/S JETTS ENGINEERING (PVT) LTD premium cheque settled against wrong customer accounts", owner: "CHRO / CLO", stage: "LOD tracking processing for Chanuka", s_date: "2026-05-15", sla: "6", comp: "", reason: "Prasly and Chanuka already resigned; non-motor verification complete"},
-            {id: "u", emp: "Ms Asanga Opatha (9354) - Case 5", dept: "Administration", reported: "2026-04-29", type: "Minor", desc: "Professional Negligence: Failed to process Rs. 120,000 payment to registered supplier Feather Print causing documentation delays", owner: "CEO / DC Committee", stage: "Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Awaiting formal feedback after extension request"},
-            {id: "v", emp: "Ms Asanga Opatha (9354) - Case 6", dept: "Administration", reported: "2026-04-29", type: "Minor", desc: "Professional Negligence: Long outstanding pending advance settlements for Malsiripura Partition Job", owner: "CFO / DC Committee", stage: "Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Awaiting formal feedback after extension request"},
-            {id: "w", emp: "W.A.D.K. Wijesinghe (8304)", dept: "Kurunegala Regional Branch", reported: "2025-12-01", type: "Major", desc: "Unethical business placement under Brillianz Broker Code instead of direct Assetline Broker network", owner: "CHRO", stage: "Letter of Caution Sent on 8th July 2026", s_date: "2026-07-08", sla: "", comp: "2026-07-08", reason: "One month fixed bonus deducted for year 2026"},
-            {id: "y", emp: "Ms Asanga Opatha (9354) - Case 7", dept: "Administration", reported: "2026-05-13", type: "Minor", desc: "Professional Negligence: Failure to submit proposal for replacement of broken head office chairs and interference in other duties", owner: "CHRO", stage: "2nd Show Cause Notice Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "z", emp: "Pradeep Dissanayake (9278)", dept: "Gampaha Zone", reported: "2026-05-13", type: "Major", desc: "Tracking booking logs without user ID codes across specific motor underwriting assets", owner: "DC / CHRO", stage: "Procedural Case Removed; Demoted due to Poor Performance", s_date: "2026-08-05", sla: "", comp: "2026-07-31", reason: "Demoted to Portfolio Manager effective 1st Aug 2026 with 2-month branch relocation target setup"},
-            {id: "Aa", emp: "U.H.J.S.Uduwaka (800421)", dept: "Nawalapitiya Regional Branch", reported: "2026-05-19", type: "Major", desc: "Premium misconduct, manufacturing unauthorized card printouts and premium misappropriation tracking (Rs. 150,000 via slips)", owner: "CHRO / HOO", stage: "System Access Cancelled; Under Review", s_date: "2026-08-24", sla: "10", comp: "", reason: "Access deactivated on 24th Aug 2026 following new complaint from customer Ajith Priyadarshana"},
-            {id: "Ab", emp: "Ms Asanga Opatha (9354) - Case 8", dept: "Administration", reported: "2026-05-28", type: "Minor", desc: "Professional Negligence: Missed deadlines for total SIM card inventories and data bill completion records", owner: "CHRO", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ac", emp: "Ms Asanga Opatha (9354) - Case 9", dept: "Administration", reported: "2026-05-28", type: "Minor", desc: "Professional Negligence: Failed to execute new vendor procurement matrix criteria required by DMU guidelines", owner: "DMU / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ad", emp: "Ms Asanga Opatha (9354) - Case 10", dept: "Administration", reported: "2026-05-29", type: "Minor", desc: "Professional Negligence: Disobeying direct orders to outline operational functions of individual administrative staff components", owner: "CFO / CHRO", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "6", comp: "", reason: "Extended deadline to 9th July missed"},
-            {id: "Ae", emp: "Bad Debts Write-off 2022 Tracking", dept: "Credit Committee", reported: "2026-07-03", type: "Minor", desc: "IRD tax return query regarding confirmation of legal recovery workflows before write-off profiling", owner: "CFO", stage: "Drafting pre-request structural requirements", s_date: "2026-07-03", sla: "", comp: "", reason: "Preventative documentation frameworks under setup"},
-            {id: "Af", emp: "Duwage Sasika Ayesh Perera (9281)", dept: "Rathnapura Regional Branch", reported: "2026-06-11", type: "Minor", desc: "Omission of damaged Growatt Hybrid Inverter serial numbers from policy system data causing claims leakage", owner: "CHRO", stage: "Letter of Caution Executed", s_date: "2026-07-09", sla: "6", comp: "2026-07-03", reason: "No fraudulent intent detected; cautionary notification served"},
-            {id: "Ag", emp: "Rashmi Sachindra (800025)", dept: "Corporate Regional Branch", reported: "2026-06-12", type: "Minor", desc: "Issuing inbound travel insurance package to unauthorized local asset holder following airport document loss claim", owner: "CHRO", stage: "Soft Warning Sent; Product Training Mandated", s_date: "2026-07-09", sla: "6", comp: "2026-07-03", reason: "Oversight admitted; targeted retraining assigned"},
-            {id: "Ah", emp: "H.I.Kapugoda (800338)", dept: "Kandy Regional Branch", reported: "2026-06-19", type: "Major", desc: "Forgery of Nations Trust Bank authorized officer rubber seal stamp layout on proposal docs and Rs. 50,700 misappropriation", owner: "CLO / CHRO", stage: "Terminated w.e.f 26th June 2026; Case Closed", s_date: "2026-07-31", sla: "", comp: "2026-07-26", reason: "Police entry filed at Cinnamon Garden (Ref: CIB II 382/61). Bank deposit proof intercepted"},
-            {id: "Ai", emp: "L.N.M.L. Silva (9780) / Mahesh Silva", dept: "Dehiwala Region", reported: "2026-06-12", type: "Minor", desc: "Violating system proposal signatures guidelines under Cyclone Ditwah data review for client M/s Teagar Tea and Coffee", owner: "CHRO", stage: "Closed", s_date: "2026-07-31", sla: "", comp: "2026-07-08", reason: "Soft warning executed to team leader on 8th July 2026"},
-            {id: "Aj", emp: "U.W.L. Undugoda (8448) / H.H.C.D. Madushani (9186)", dept: "Rathnapura Regional Branch", reported: "2026-06-22", type: "Major", desc: "Issuing unauthorized Flood/CST policy additions to Flavour Symphony schedule despite restrictions", owner: "CHRO", stage: "Closed", s_date: "2026-07-05", sla: "", comp: "2026-07-05", reason: "Warning letters executed to both individual targets on 5th July 2026"}
-        ];
-        registerDatabase = registerDatabase.concat(databasePart2);
-        let databasePart3 = [
-            {id: "Ak", emp: "Rajitha Lal Jayantha (8239)", dept: "Chilaw Branch", reported: "2026-06-24", type: "Major", desc: "Issuing under-quoted premium layout (Rs. 234,070.63) bypass tracking loop without mandatory vehicle checking", owner: "CHRO / DC", stage: "Show Cause Response Received on 7th August 2026", s_date: "2026-08-07", sla: "", comp: "", reason: "Awaiting collective committee review scheduling"},
-            {id: "Al", emp: "Chaminda Ariyarathna (9819)", dept: "Administration", reported: "2026-06-25", type: "Major", desc: "Data Protection Act violations, unauthorized system password transfers, cash reimbursement fraud (Rs. 15,000) and storage asset tracking loops", owner: "CLO / CHRO / HOO", stage: "Resigned - Active Criminal Complaint at Cinnamon Garden PS", s_date: "2026-07-09", sla: "", comp: "", reason: "Resigned 2nd July. Misappropriated cash returned manually via Nethum account loop, police complaint active"},
-            {id: "Am", emp: "Ms Asanga Opatha (9354) - Case 12", dept: "Administration", reported: "2026-07-07", type: "Minor", desc: "Professional Negligence: Internal audit tracking fuel allocation leakage and failure to terminate inactive data dongles of separated staff (Rs. 160,198.36 loss)", owner: "CHRO / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "An", emp: "Ms Asanga Opatha (9354) - Case 13", dept: "Administration", reported: "2026-07-07", type: "Minor", desc: "Professional Negligence: Failure to arrange payment files for door infrastructure repairs at Galle Branch completed via regional staff out-of-pocket tracking", owner: "CHRO / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ao", emp: "Ms Asanga Opatha (9354) - Case 14", dept: "Administration", reported: "2026-07-07", type: "Minor", desc: "Professional Negligence: Failure to meet administrative update targets for corporate Fixed Asset Registry logs", owner: "CHRO / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ap", emp: "Sales Staff Downgrading Process", dept: "Human Resources", reported: "2026-07-06", type: "Minor", desc: "DC Authorization workflows tracking low performers evaluation metrics following formal PIP runs", owner: "CHRO", stage: "Active Review Matrix Integration", s_date: "2026-08-05", sla: "", comp: "", reason: "CHRO mapping out initiatives per structural performance targets"},
-            {id: "Aq", emp: "Ms Asanga Opatha (9354) - Case 15 & 16", dept: "Administration", reported: "2026-07-09", type: "Major", desc: "Professional Negligence: Backlog in processing corporate stamps and blocking delivery files for printed business cards (Umesha Weerasinghe)", owner: "CHRO / CFO", stage: "Demoted to Manager - Administration effective 1st Aug 2026", s_date: "2026-08-12", sla: "", comp: "2026-08-12", reason: "Demoted following 12th Aug inquiry. Security and janitorial reporting channels withdrawn and re-routed to HR"},
-            {id: "Ar", emp: "J.K.P Manoj Mithuranga (8504)", dept: "Homagama Regional Branch", reported: "2026-07-09", type: "Major", desc: "Generating broker code profiles (Mercantile Fortunes) without mandatory signed broker request forms", owner: "MUW / DC", stage: "Tracking Premium Source Origins", s_date: "2026-08-25", sla: "", comp: "", reason: "Motor Underwriting department checking premium origin logs"},
-            {id: "As", emp: "R.A.K. Viduranga (Kasun 9945)", dept: "Maharagama Regional Branch", reported: "2026-07-24", type: "Major", desc: "Premium misappropriation: Collecting Rs. 65,000 via personal bank transfer loop on policy 5M9VCP000001855 causing cancellation", owner: "CHRO / DC", stage: "Awaiting Committee Review of Show Cause Explanation", s_date: "2026-08-06", sla: "7", comp: "", reason: "Show cause reply received on 6th Aug; records check indicates partial admission of Rs. 40,000"},
-            {id: "At", emp: "A.A.C.M. Peiris (Chathura 9953)", dept: "Maharagama Regional Branch", reported: "2026-07-14", type: "Major", desc: "Extensive multiple premium misappropriations totaling Rs. 916,490.57 across 14 checked account files (e.g. Gomas, Perera)", owner: "CLO / CHRO / HOO", stage: "Suspended; Cinnamon Garden Crime Division Case Pending", s_date: "2026-08-20", sla: "6", comp: "", reason: "Failed to fulfill extended repayment deadline on 19th Aug. CLO filing structural entries at Fraud Bureau"},
-            {id: "Au", emp: "Dilum Pathirana (9950)", dept: "Nugegoda Branch", reported: "2026-07-22", type: "Major", desc: "Premium allocation rolling fraud: Diverting client Lal's premium cheque (Rs. 82,489.94) into client Keerthirathna's account", owner: "CHRO", stage: "Reinstated via Payment; Increments and Promotions Frozen", s_date: "2026-07-24", sla: "3", comp: "2026-07-24", reason: "Policy reinstated via cash injection on 24th July. Disciplinary structural holds applied for entire 2026 period"},
-            {id: "Av", emp: "M.L.A.I.H. Molligoda (8160)", dept: "Counter Underwriting / Branch Ops", reported: "2025-11-25", type: "Major", desc: "Defaulted vehicle staff loans outstanding total Rs. 2,139,383 leading to Vacation of Post", owner: "CLO / Finance", stage: "LOD Confirmed; Preparing Court Filing", s_date: "2026-08-25", sla: "3", comp: "", reason: "Filing targeted for court submission before end of August 2026. CR books verified for vehicle assets repossession"},
-            {id: "Aw", emp: "Disciplinary Framework - Demotions Policy", dept: "Operations / HR", reported: "2026-07-31", type: "Minor", desc: "Reviewing institutional implementation matrix for down-grading tracking structures on persistent under-performers", owner: "CHRO", stage: "Finalizing August 2026 Target Review Lists", s_date: "2026-08-25", sla: "3", comp: "2026-08-03", reason: "3-tier structural notification policy mapped; integration ongoing with Sanuri"},
-            {id: "Ax", emp: "S. Anthoni (9731) - Case 52", dept: "Barberyn Reef Resort Portfolio", reported: "2025-09-08", type: "Major", desc: "Massive premium rolling misappropriation totaling Rs. 5,179,608.30 confirmed by internal audit", owner: "CLO / Internal Audit", stage: "Active Fraud Investigation Bureau (FIB) Proceedings", s_date: "2026-08-25", sla: "", comp: "", reason: "LOD issued; criminal cases active at Cinnamon Gardens Police and FIB tracking networks"},
-            {id: "Ay", emp: "G.M.M. Jayasekara (8662)", dept: "Southern Regional Branch", reported: "2025-10-15", type: "Minor", desc: "Contractual breach via publication of defamatory content during YouTube media interview", owner: "CLO / External Counsel", stage: "Plaint Filed in Court; Pre-trial Scheduled", s_date: "2026-08-25", sla: "", comp: "", reason: "External counsel Manoli Jinadasa confirmed pre-trial window assigned for 30th Sept 2026"},
-            {id: "Az", emp: "Manjula Jayasinghe (9907)", dept: "Colombo Zone", reported: "2025-11-01", type: "Major", desc: "Recovery tracking loan balance of Rs. 5,578,134.00 following constructive termination dispute", owner: "DC Committee", stage: "Closed - Removed from Active Minutes", s_date: "2026-08-25", sla: "", comp: "2026-08-10", reason: "Full settlement received on 10th Aug 2026; LT case withdrawn and registration books released"},
-            {id: "Ba", emp: "Dilshan T (9370)", dept: "Sales Department", reported: "2026-08-07", type: "Major", desc: "Sudden data tracking evasion, skipping clearance and outstanding policy balance verification under Vacation of Post", owner: "CLO", stage: "LOD Preparation Stage", s_date: "2026-08-25", sla: "7", comp: "", reason: "LOD execution pending check on precise monetary calculations; May 2025 retention cash safe"},
-            {id: "Bb", emp: "L.B.M.Gunawardhana (Bihansa 800109)", dept: "Contact Centre", reported: "2026-08-12", type: "Major", desc: "Breaching internal data security systems by capturing and sharing confidential client details to external channels", owner: "CHRO", stage: "Termination Processing Pipeline", s_date: "2026-08-25", sla: "3", comp: "", reason: "Suspended 17th Aug. No explanation submitted within show cause boundaries; termination scheduled by 28th Aug"},
-            {id: "Bc", emp: "Hashan Nishshanka (9598)", dept: "Wariyapola Regional Branch", reported: "2026-08-05", type: "Major", desc: "Withholding outstanding marine premiums of LKR 130,699.86 across 17 policies bypassed outside Assetline Brokers", owner: "CHRO", stage: "Show Cause Issuance Phase", s_date: "2026-08-25", sla: "3", comp: "", reason: "Show cause order scheduled for delivery by 28th Aug 2026 to track online data transfers justification"},
-            {id: "Bd", emp: "S.A.D.P.C. Samarathunga (Chandika 9835)", dept: "Kuliyapitiya Regional Branch", reported: "2026-08-20", type: "Major", desc: "Premium misappropriation: Collecting cash at customer home on 29th April (Rs. 37,417.00) followed by unauthorized rolling cancel blocks", owner: "CHRO", stage: "Show Cause Issuance Phase", s_date: "2026-08-25", sla: "3", comp: "", reason: "Show cause scheduled for delivery by 28th Aug 2026 based on 3CX call log validations"}
-        ];
-        registerDatabase = registerDatabase.concat(databasePart3);
-        function calculateMetrics(caseData) {
-            const today = new Date();
-            const hasReportedDate = caseData.reported && caseData.reported !== "";
-            const dateReported = hasReportedDate ? new Date(caseData.reported) : null;
-            const slaDays = caseData.sla && caseData.sla !== "" ? parseInt(caseData.sla) : null;
-            let dueDateString = "-";
-            let dueDate = null;
-            if (hasReportedDate && !isNaN(dateReported.getTime()) && slaDays !== null) {
-                dueDate = new Date(dateReported);
-                dueDate.setDate(dueDate.getDate() + slaDays);
-                const yyyy = dueDate.getFullYear();
-                const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(dueDate.getDate()).padStart(2, '0');
-                dueDateString = `${yyyy}-${mm}-${dd}`;
-            }
-            let daysElapsed = "-";
-            if (hasReportedDate && !isNaN(dateReported.getTime())) {
-                const endDate = caseData.comp && caseData.comp !== "" ? new Date(caseData.comp) : today;
-                const timeDiff = endDate.getTime() - dateReported.getTime();
-                daysElapsed = !isNaN(timeDiff) ? Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24))) : "-";
-            }
-            let status = "Green";
-            let delayDays = 0;
-            if (caseData.comp && caseData.comp !== "") {
-                status = "Closed";
-                if (dueDate) {
-                    const completionDate = new Date(caseData.comp);
-                    if (completionDate > dueDate) {
-                        const delayDiff = completionDate.getTime() - dueDate.getTime();
-                        delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
-                    }
+        // Dedicated Cloud API Storage Cluster Endpoint
+        const DB_URL = "https://kvdb.io";
+        let casesList = [];
+
+        // Element Mappings
+        const caseForm = document.getElementById('caseForm');
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const exportBtn = document.getElementById('exportBtn');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const formHeader = document.getElementById('formHeader');
+        const saveBtn = document.getElementById('saveBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const editRowIndexInput = document.getElementById('editRowIndex');
+        const totalCasesCount = document.getElementById('totalCasesCount');
+
+        // Fetch Live Database Data from Cloud
+        async function loadDataFromCloud() {
+            showLoading(true);
+            try {
+                const response = await fetch(DB_URL);
+                if (response.ok) {
+                    const data = await response.json();
+                    casesList = Array.isArray(data) ? data : [];
                 }
-            } else if (dueDate && !isNaN(dueDate.getTime())) {
-                const systemToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const targetedDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-                if (systemToday > targetedDue) {
-                    status = "Red";
-                    const delayDiff = systemToday.getTime() - targetedDue.getTime();
-                    delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
+            } catch (error) {
+                console.log("Database initialized cleanly. Ready for storage inputs.");
+                casesList = [];
+            }
+            sortAndRender(casesList);
+            showLoading(false);
+        }
+
+        // Commit Persistent Changes Live to Cloud API
+        async function saveDataToCloud() {
+            showLoading(true);
+            try {
+                await fetch(DB_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(casesList),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } catch (error) {
+                alert("Cloud Sync Failure. Check your internet connection configuration.");
+            }
+            showLoading(false);
+        }
+
+        function showLoading(show) {
+            loadingStatus.style.display = show ? 'block' : 'none';
+        }
+
+        // Analytical Engine: Auto-Calculates Dates, Deadlines, & Badges
+        function calculateCalculatedFields(item) {
+            let dueDate = "";
+            let daysElapsed = "";
+            let status = "Green";
+            let delayDays = "";
+
+            if (item.dateStageCommenced && item.applicableSla) {
+                const commenced = new Date(item.dateStageCommenced);
+                const sla = parseInt(item.applicableSla);
+                const due = new Date(commenced);
+                due.setDate(due.getDate() + sla);
+                dueDate = due.toISOString().split('T')[0];
+
+                const end = item.completionDate ? new Date(item.completionDate) : new Date();
+                const diffTime = end - commenced;
+                daysElapsed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+
+                if (item.completionDate) {
+                    status = "Closed";
+                    const completionDiff = new Date(item.completionDate) - due;
+                    if (completionDiff > 0) {
+                        delayDays = Math.floor(completionDiff / (1000 * 60 * 60 * 24));
+                    }
                 } else {
-                    const trackingDiff = targetedDue.getTime() - systemToday.getTime();
-                    const daysRemaining = Math.floor(trackingDiff / (1000 * 60 * 60 * 24));
-                    if (daysRemaining <= 5) {
+                    if (daysElapsed > sla) {
+                        status = "Red";
+                        delayDays = daysElapsed - sla;
+                    } else if (daysElapsed >= sla * 0.75) {
                         status = "Amber";
                     }
                 }
             }
-            return { dueDateString, daysElapsed, status, delayDays };
+            return { dueDate, daysElapsed, status, delayDays };
         }
 
-        function renderTable(dataToRender) {
-            const tbody = document.getElementById("tableBody");
-            tbody.innerHTML = ""; 
-            dataToRender.forEach((c) => {
-                const actualIndex = registerDatabase.findIndex(item => item.id === c.id);
-                const metrics = calculateMetrics(c);
-                const row = document.createElement("tr");
-                let statusBadgeClass = "badge-green";
-                if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
-                if (metrics.status === "Red") statusBadgeClass = "badge-red";
-                if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
+        // Data Sorting: Forces Most Recent "Date Reported" to the Top
+        function sortAndRender(arrayData) {
+            arrayData.sort((a, b) => {
+                if (!a.dateReported) return 1;
+                if (!b.dateReported) return -1;
+                return new Date(b.dateReported) - new Date(a.dateReported);
+            });
+            totalCasesCount.innerText = casesList.length;
+            renderTable(arrayData);
+        }
+
+        // Interface Display Renderer
+        function renderTable(dataArray) {
+            tableBody.innerHTML = "";
+            if (dataArray.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="17" class="text-center">No structural logs found inside register storage grid.</td></tr>`;
+                return;
+            }
+
+            dataArray.forEach((item, index) => {
+                const calcs = calculateCalculatedFields(item);
+                let badgeClass = "badge-green";
+                if (calcs.status === "Amber") badgeClass = "badge-amber";
+                if (calcs.status === "Red") badgeClass = "badge-red";
+                if (calcs.status === "Closed") badgeClass = "badge-closed";
+
+                const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="actions-cell">
-                        <button class="btn btn-edit" onclick="triggerEditRecord(${actualIndex})">Edit</button>
-                        <button class="btn btn-delete" onclick="triggerDeleteRecord(${actualIndex})">Remove</button>
+                        <button class="btn btn-edit" onclick="editCase(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteCase(${index})">Delete</button>
                     </td>
-                    <td class="text-center" style="font-weight: bold;">${c.id}</td>
-                    <td class="text-left">${c.emp}</td>
-                    <td class="text-left">${c.dept || '-'}</td>
-                    <td class="text-center">${c.reported || '-'}</td>
-                    <td class="text-center">${c.type || '-'}</td>
-                    <td class="text-left">${c.desc}</td>
-                    <td class="text-left">${c.owner || '-'}</td>
-                    <td class="text-left">${c.stage || '-'}</td>
-                    <td class="text-center">${c.s_date || '-'}</td>
-                    <td class="text-center">${c.sla || '-'}</td>
-                    <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
-                    <td class="text-center">${c.comp || '-'}</td>
-                    <td class="text-center">${metrics.daysElapsed}</td>
-                    <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
-                    <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
-                    <td class="text-left">${c.reason || '-'}</td>
+                    <td class="text-center"><b>${item.caseNo || ''}</b></td>
+                    <td>${item.employee || ''}</td>
+                    <td>${item.department || ''}</td>
+                    <td class="text-center">${item.dateReported || ''}</td>
+                    <td class="text-center">${item.typeOffence || ''}</td>
+                    <td>${item.natureAllegation || ''}</td>
+                    <td>${item.officer || ''}</td>
+                    <td>${item.currentStage || ''}</td>
+                    <td class="text-center">${item.dateStageCommenced || ''}</td>
+                    <td class="text-center">${item.applicableSla || ''}</td>
+                    <td class="text-center">${calcs.dueDate}</td>
+                    <td class="text-center">${item.completionDate || ''}</td>
+                    <td class="text-center">${calcs.daysElapsed}</td>
+                    <td class="text-center"><span class="badge ${badgeClass}">${calcs.status}</span></td>
+                    <td class="text-center">${calcs.delayDays}</td>
+                    <td>${item.reasonDelay || ''}</td>
                 `;
-                tbody.appendChild(row);
+                tableBody.appendChild(row);
             });
         }
 
-        document.getElementById("searchInput").addEventListener("input", function(e) {
-            const query = e.target.value.toLowerCase().trim();
-            const filteredData = registerDatabase.filter(item => 
-                item.id.toLowerCase().includes(query) || 
-                item.emp.toLowerCase().includes(query) || 
-                (item.dept && item.dept.toLowerCase().includes(query)) ||
-                item.desc.toLowerCase().includes(query)
-            );
-            renderTable(filteredData);
+        // Create or Modify Entry Form Handler
+        caseForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const caseData = {
+                caseNo: document.getElementById('caseNo').value,
+                employee: document.getElementById('employee').value,
+                department: document.getElementById('department').value,
+                dateReported: document.getElementById('dateReported').value,
+                typeOffence: document.getElementById('typeOffence').value,
+                natureAllegation: document.getElementById('natureAllegation').value,
+                officer: document.getElementById('officer').value,
+                currentStage: document.getElementById('currentStage').value,
+                dateStageCommenced: document.getElementById('dateStageCommenced').value,
+                applicableSla: document.getElementById('applicableSla').value,
+                completionDate: document.getElementById('completionDate').value,
+                reasonDelay: document.getElementById('reasonDelay').value
+            };
+
+            const editIndex = editRowIndexInput.value;
+            if (editIndex !== "") {
+                casesList[parseInt(editIndex)] = caseData;
+            } else {
+                casesList.push(caseData);
+            }
+
+            resetForm();
+            sortAndRender(casesList);
+            await saveDataToCloud();
         });
 
-        window.triggerEditRecord = function(index) {
-            const targetRecord = registerDatabase[index];
-            document.getElementById("editRowIndex").value = index;
-            document.getElementById("caseNo").value = targetRecord.id;
-            document.getElementById("employee").value = targetRecord.emp;
-            document.getElementById("department").value = targetRecord.dept || "";
-            document.getElementById("dateReported").value = targetRecord.reported || "";
-            document.getElementById("typeOffence").value = targetRecord.type || "";
-            document.getElementById("natureAllegation").value = targetRecord.desc;
-            document.getElementById("officer").value = targetRecord.owner || "";
-            document.getElementById("currentStage").value = targetRecord.stage || "";
-            document.getElementById("dateStageCommenced").value = targetRecord.s_date || "";
-            document.getElementById("applicableSla").value = targetRecord.sla || "";
-            document.getElementById("completionDate").value = targetRecord.comp || "";
-            document.getElementById("reasonDelay").value = targetRecord.reason || "";
-            document.getElementById("formHeader").innerText = "Modify Case Details";
-            document.getElementById("btnSubmitForm").innerText = "Save Changes";
-            document.getElementById("btnCancelEdit").style.display = "inline-block";
+        // Maps Target Data Row Parameters Back Into Entry Form Inputs
+        window.editCase = function(index) {
+            const item = casesList[index];
+            document.getElementById('caseNo').value = item.caseNo || '';
+            document.getElementById('employee').value = item.employee || '';
+            document.getElementById('department').value = item.department || '';
+            document.getElementById('dateReported').value = item.dateReported || '';
+            document.getElementById('typeOffence').value = item.typeOffence || '';
+            document.getElementById('natureAllegation').value = item.natureAllegation || '';
+            document.getElementById('officer').value = item.officer || '';
+            document.getElementById('currentStage').value = item.currentStage || '';
+            document.getElementById('dateStageCommenced').value = item.dateStageCommenced || '';
+            document.getElementById('applicableSla').value = item.applicableSla || '';
+            document.getElementById('completionDate').value = item.completionDate || '';
+            document.getElementById('reasonDelay').value = item.reasonDelay || '';
+
+            editRowIndexInput.value = index;
+            formHeader.innerText = "Modify Case File Structure";
+            saveBtn.innerText = "Save Changes";
+            cancelBtn.style.display = "inline-block";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.triggerDeleteRecord = function(index) {
-            if (confirm(`Confirm permanent removal of Case No: ${registerDatabase[index].id}?`)) {
-                registerDatabase.splice(index, 1);
-                renderTable(registerDatabase);
-                clearFormState();
+        // Wipe Data Row File and Re-Sync Database Cloud Arrays
+        window.deleteCase = async function(index) {
+            if (confirm("Are you sure you want to permanently delete this structural record from the cloud register?")) {
+                casesList.splice(index, 1);
+                sortAndRender(casesList);
+                await saveDataToCloud();
+                resetForm();
             }
         };
 
-        function clearFormState() {
-            document.getElementById("caseForm").reset();
-            document.getElementById("editRowIndex").value = "";
-            document.getElementById("formHeader").innerText = "Log New Disciplinary Case";
-            document.getElementById("btnSubmitForm").innerText = "Add Case to Register";
-            document.getElementById("btnCancelEdit").style.display = "none";
+        // Live Real-Time Dashboard Queries Lookup Filter
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const filtered = casesList.filter(item => {
+    <script>
+        // Dedicated Cloud API Storage Cluster Endpoint
+        const DB_URL = "https://kvdb.io";
+        let casesList = [];
+
+        // Element Mappings
+        const caseForm = document.getElementById('caseForm');
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const exportBtn = document.getElementById('exportBtn');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const formHeader = document.getElementById('formHeader');
+        const saveBtn = document.getElementById('saveBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const editRowIndexInput = document.getElementById('editRowIndex');
+        const totalCasesCount = document.getElementById('totalCasesCount');
+
+        // Fetch Live Database Data from Cloud
+        async function loadDataFromCloud() {
+            showLoading(true);
+            try {
+                const response = await fetch(DB_URL);
+                if (response.ok) {
+                    const data = await response.json();
+                    casesList = Array.isArray(data) ? data : [];
+                }
+            } catch (error) {
+                console.log("Database initialized cleanly. Ready for storage inputs.");
+                casesList = [];
+            }
+            sortAndRender(casesList);
+            showLoading(false);
         }
 
-        document.getElementById("btnCancelEdit").addEventListener("click", clearFormState);
-
-        document.getElementById("caseForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const targetIndexStr = document.getElementById("editRowIndex").value;
-            const caseData = {
-                id: document.getElementById("caseNo").value.trim(),
-                emp: document.getElementById("employee").value.trim(),
-                dept: document.getElementById("department").value.trim(),
-                reported: document.getElementById("dateReported").value,
-                type: document.getElementById("typeOffence").value,
-                desc: document.getElementById("natureAllegation").value.trim(),
-                owner: document.getElementById("officer").value.trim(),
-                stage: document.getElementById("currentStage").value.trim(),
-                s_date: document.getElementById("dateStageCommenced").value,
-                sla: document.getElementById("applicableSla").value,
-                comp: document.getElementById("completionDate").value,
-                reason: document.getElementById("reasonDelay").value.trim()
-            };
-            if (targetIndexStr !== "") {
-                registerDatabase[parseInt(targetIndexStr)] = caseData;
-            } else {
-                if (registerDatabase.some(item => item.id.toLowerCase() === caseData.id.toLowerCase())) {
-                    alert("A disciplinary case with this precise ID number already exists.");
-                    return;
-                }
-                registerDatabase.push(caseData);
+        // Commit Persistent Changes Live to Cloud API
+        async function saveDataToCloud() {
+            showLoading(true);
+            try {
+                await fetch(DB_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(casesList),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } catch (error) {
+                alert("Cloud Sync Failure. Check your internet connection configuration.");
             }
-            renderTable(registerDatabase);
-            clearFormState();
-            document.getElementById("searchInput").value = ""; 
+            showLoading(false);
+        }
+
+        function showLoading(show) {
+            loadingStatus.style.display = show ? 'block' : 'none';
+        }
+
+        // Analytical Engine: Auto-Calculates Dates, Deadlines, & Badges
+        function calculateCalculatedFields(item) {
+            let dueDate = "";
+            let daysElapsed = "";
+            let status = "Green";
+            let delayDays = "";
+
+            if (item.dateStageCommenced && item.applicableSla) {
+                const commenced = new Date(item.dateStageCommenced);
+                const sla = parseInt(item.applicableSla);
+                const due = new Date(commenced);
+                due.setDate(due.getDate() + sla);
+                dueDate = due.toISOString().split('T')[0];
+
+                const end = item.completionDate ? new Date(item.completionDate) : new Date();
+                const diffTime = end - commenced;
+                daysElapsed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+
+                if (item.completionDate) {
+                    status = "Closed";
+                    const completionDiff = new Date(item.completionDate) - due;
+                    if (completionDiff > 0) {
+                        delayDays = Math.floor(completionDiff / (1000 * 60 * 60 * 24));
+                    }
+                } else {
+                    if (daysElapsed > sla) {
+                        status = "Red";
+                        delayDays = daysElapsed - sla;
+                    } else if (daysElapsed >= sla * 0.75) {
+                        status = "Amber";
+                    }
+                }
+            }
+            return { dueDate, daysElapsed, status, delayDays };
+        }
+
+        // Data Sorting: Forces Most Recent "Date Reported" to the Top
+        function sortAndRender(arrayData) {
+            arrayData.sort((a, b) => {
+                if (!a.dateReported) return 1;
+                if (!b.dateReported) return -1;
+                return new Date(b.dateReported) - new Date(a.dateReported);
+            });
+            totalCasesCount.innerText = casesList.length;
+            renderTable(arrayData);
+        }
+
+        // Interface Display Renderer
+        function renderTable(dataArray) {
+            tableBody.innerHTML = "";
+            if (dataArray.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="17" class="text-center">No structural logs found inside register storage grid.</td></tr>`;
+                return;
+            }
+
+            dataArray.forEach((item, index) => {
+                const calcs = calculateCalculatedFields(item);
+                let badgeClass = "badge-green";
+                if (calcs.status === "Amber") badgeClass = "badge-amber";
+                if (calcs.status === "Red") badgeClass = "badge-red";
+                if (calcs.status === "Closed") badgeClass = "badge-closed";
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="actions-cell">
+                        <button class="btn btn-edit" onclick="editCase(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteCase(${index})">Delete</button>
+                    </td>
+                    <td class="text-center"><b>${item.caseNo || ''}</b></td>
+                    <td>${item.employee || ''}</td>
+                    <td>${item.department || ''}</td>
+                    <td class="text-center">${item.dateReported || ''}</td>
+                    <td class="text-center">${item.typeOffence || ''}</td>
+                    <td>${item.natureAllegation || ''}</td>
+                    <td>${item.officer || ''}</td>
+                    <td>${item.currentStage || ''}</td>
+                    <td class="text-center">${item.dateStageCommenced || ''}</td>
+                    <td class="text-center">${item.applicableSla || ''}</td>
+                    <td class="text-center">${calcs.dueDate}</td>
+                    <td class="text-center">${item.completionDate || ''}</td>
+                    <td class="text-center">${calcs.daysElapsed}</td>
+                    <td class="text-center"><span class="badge ${badgeClass}">${calcs.status}</span></td>
+                    <td class="text-center">${calcs.delayDays}</td>
+                    <td>${item.reasonDelay || ''}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Create or Modify Entry Form Handler
+        caseForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const caseData = {
+                caseNo: document.getElementById('caseNo').value,
+                employee: document.getElementById('employee').value,
+                department: document.getElementById('department').value,
+                dateReported: document.getElementById('dateReported').value,
+                typeOffence: document.getElementById('typeOffence').value,
+                natureAllegation: document.getElementById('natureAllegation').value,
+                officer: document.getElementById('officer').value,
+                currentStage: document.getElementById('currentStage').value,
+                dateStageCommenced: document.getElementById('dateStageCommenced').value,
+                applicableSla: document.getElementById('applicableSla').value,
+                completionDate: document.getElementById('completionDate').value,
+                reasonDelay: document.getElementById('reasonDelay').value
+            };
+
+            const editIndex = editRowIndexInput.value;
+            if (editIndex !== "") {
+                casesList[parseInt(editIndex)] = caseData;
+            } else {
+                casesList.push(caseData);
+            }
+
+            resetForm();
+            sortAndRender(casesList);
+            await saveDataToCloud();
         });
 
-        renderTable(registerDatabase);
-    </script>
-</body>
-</html>
+        // Maps Target Data Row Parameters Back Into Entry Form Inputs
+        window.editCase = function(index) {
+            const item = casesList[index];
+            document.getElementById('caseNo').value = item.caseNo || '';
+            document.getElementById('employee').value = item.employee || '';
+            document.getElementById('department').value = item.department || '';
+            document.getElementById('dateReported').value = item.dateReported || '';
+            document.getElementById('typeOffence').value = item.typeOffence || '';
+            document.getElementById('natureAllegation').value = item.natureAllegation || '';
+            document.getElementById('officer').value = item.officer || '';
+            document.getElementById('currentStage').value = item.currentStage || '';
+            document.getElementById('dateStageCommenced').value = item.dateStageCommenced || '';
+            document.getElementById('applicableSla').value = item.applicableSla || '';
+            document.getElementById('completionDate').value = item.completionDate || '';
+            document.getElementById('reasonDelay').value = item.reasonDelay || '';
+
+            editRowIndexInput.value = index;
+            formHeader.innerText = "Modify Case File Structure";
+            saveBtn.innerText = "Save Changes";
+            cancelBtn.style.display = "inline-block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // Wipe Data Row File and Re-Sync Database Cloud Arrays
+        window.deleteCase = async function(index) {
+            if (confirm("Are you sure you want to permanently delete this structural record from the cloud register?")) {
+                casesList.splice(index, 1);
+                sortAndRender(casesList);
+                await saveDataToCloud();
+                resetForm();
+            }
+        };
+
+        // Live Real-Time Dashboard Queries Lookup Filter
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const filtered = casesList.filter(item => {
+            return (item.caseNo && item.caseNo.toLowerCase().includes(query)) ||
+                   (item.employee && item.employee.toLowerCase().includes(query)) ||
+                   (item.department && item.department.toLowerCase().includes(query)) ||
+                   (item.natureAllegation && item.natureAllegation.toLowerCase().includes(query));
+        });
+        renderTable(filtered);
+    });
+
+    cancelBtn.addEventListener('click', resetForm);
+
+    function resetForm() {
+        caseForm.reset();
+        editRowIndexInput.value = "";
+        formHeader.innerText = "Log New Disciplinary Case";
+        saveBtn.innerText = "Add Case to Register";
+        cancelBtn.style.display = "none";
+    }
+
+    // SheetJS Native Workbook Generator Utility & Auto-Fitted Width Calculations
+    exportBtn.addEventListener('click', function() {
+        if (casesList.length === 0) {
+            alert("There are no case files available inside your display log matrix to package into Excel.");
+            return;
+        }
+        
+        const excelRows = casesList.map(item => {
+            const calcs = calculateCalculatedFields(item);
+            return {
+                "Case No.": item.caseNo || '',
+                "Employee / Reference": item.employee || '',
+                "Department": item.department || '',
+                "Date Reported": item.dateReported || '',
+                "Type of Offence": item.typeOffence || '',
+                "Nature of Allegation": item.natureAllegation || '',
+                "Responsible Officer": item.officer || '',
+                "Current Stage": item.currentStage || '',
+                "Date Stage Commenced": item.dateStageCommenced || '',
+                "Applicable SLA": item.applicableSla || '',
+                "Due Date": calcs.dueDate || '',
+                "Actual Completion Date": item.completionDate || '',
+                "Days Elapsed": calcs.daysElapsed || 0,
+                "Status": calcs.status || '',
+                "Delay Days": calcs.delayDays || '',
+                "Reason for Delay": item.reasonDelay || ''
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(excelRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "DC Case Register");
+
+        const objectKeys = Object.keys(excelRows[0]);
+        worksheet["!cols"] = objectKeys.map(key => {
+            let maxLen = key.length;
+            excelRows.forEach(row => {
+                const valueStr = row[key] ? row[key].toString() : "";
+                if (valueStr.length > maxLen) {
+                    maxLen = valueStr.length;
+                }
+            });
+            return { wch: maxLen + 3 };
+        });
+
+        XLSX.writeFile(workbook, "DC_Case_Register_Report.xlsx");
+    });
+
+    // Initialize Application Frame on Startup
+    loadDataFromCloud();
