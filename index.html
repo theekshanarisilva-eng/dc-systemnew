@@ -3,405 +3,700 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DC Case Register System</title>
+    <title>Disciplinary Case Management System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --primary-color: #1f4e78;
-            --border-color: #d9d9d9;
-            --text-color: #333333;
-            --bg-light: #f5f7fa;
-            --status-green: #d4edda;
-            --status-green-text: #155724;
-            --status-amber: #fff3cd;
-            --status-amber-text: #856404;
-            --status-red: #f8d7da;
-            --status-red-text: #721c24;
-            --status-closed: #e2e3e5;
-            --status-closed-text: #383d41;
-        }
         body {
-            font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
-            margin: 20px;
-            color: var(--text-color);
-            background-color: var(--bg-light);
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
         }
-        h2 {
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
-        .form-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
         }
-        .form-title {
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .form-group label {
-            font-size: 0.9em;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        .form-group label .required {
-            color: #dc3545;
-            margin-left: 3px;
-        }
-        .form-group input, .form-group select {
-            padding: 8px;
-            border: 1px solid var(--border-color);
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
             border-radius: 4px;
-            font-family: inherit;
-            font-size: 0.95em;
         }
-        .action-bar {
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
-        .search-input {
-            padding: 8px 12px;
-            width: 350px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.95em;
-        }
-        .btn {
-            padding: 9px 18px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s, color 0.2s;
-            font-size: 0.9em;
-        }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { background-color: #153552; }
-        .btn-edit { background-color: #ffc107; color: #212529; padding: 4px 8px; font-size: 0.8em; margin-right: 4px; }
-        .btn-edit:hover { background-color: #e0a800; }
-        .btn-delete { background-color: #dc3545; color: white; padding: 4px 8px; font-size: 0.8em; }
-        .btn-delete:hover { background-color: #bd2130; }
-        .btn-secondary { background-color: #6c757d; color: white; }
-        .btn-secondary:hover { background-color: #5a6268; }
-        .table-container {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95em;
-            background: white;
-            min-width: 1850px;
-        }
-        th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            padding: 12px 10px;
-            border: 1px solid var(--border-color);
-        }
-        td {
-            padding: 8px 10px;
-            border: 1px solid var(--border-color);
-            vertical-align: middle;
-        }
-        .text-center { text-align: center; }
-        .text-left { text-align: left; }
-        .actions-cell { white-space: nowrap; text-align: center; }
-        .badge {
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-weight: bold;
-            display: inline-block;
-            text-align: center;
-            width: 80px;
-        }
-        .badge-green { background-color: var(--status-green); color: var(--status-green-text); }
-        .badge-amber { background-color: var(--status-amber); color: var(--status-amber-text); }
-        .badge-red { background-color: var(--status-red); color: var(--status-red-text); }
-        .badge-closed { background-color: var(--status-closed); color: var(--status-closed-text); }
     </style>
 </head>
-<body>
-    <h2>Disciplinary Case (DC) Register System</h2>
-    <div class="form-container">
-        <div class="form-title" id="formHeader">Log New Disciplinary Case</div>
-        <form id="caseForm">
-            <input type="hidden" id="editRowIndex" value="">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="caseNo">Case No.<span class="required">*</span></label>
-                    <input type="text" id="caseNo" placeholder="Unique tracking layout id" required>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-5 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2.5 rounded-lg shadow-inner">
+                    <i class="fa-solid fa-scale-balanced text-2xl text-white"></i>
                 </div>
-                <div class="form-group">
-                    <label for="employee">Employee / Reference<span class="required">*</span></label>
-                    <input type="text" id="employee" placeholder="Full name / Employee ID" required>
-                </div>
-                <div class="form-group">
-                    <label for="department">Department</label>
-                    <input type="text" id="department" placeholder="Operational business unit">
-                </div>
-                <div class="form-group">
-                    <label for="dateReported">Date Reported</label>
-                    <input type="date" id="dateReported">
-                </div>
-                <div class="form-group">
-                    <label for="typeOffence">Type of Offence</label>
-                    <select id="typeOffence">
-                        <option value="">-- Choose Priority Level --</option>
-                        <option value="Minor">Minor</option>
-                        <option value="Major">Major</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="natureAllegation">Nature of Allegation<span class="required">*</span></label>
-                    <input type="text" id="natureAllegation" placeholder="Summary statement of events" required>
-                </div>
-                <div class="form-group">
-                    <label for="officer">Responsible Officer</label>
-                    <input type="text" id="officer" placeholder="Assigned HR / Legal manager">
-                </div>
-                <div class="form-group">
-                    <label for="currentStage">Current Stage</label>
-                    <input type="text" id="currentStage" placeholder="Current procedural phase">
-                </div>
-                <div class="form-group">
-                    <label for="dateStageCommenced">Date Stage Commenced</label>
-                    <input type="date" id="dateStageCommenced">
-                </div>
-                <div class="form-group">
-                    <label for="applicableSla">Applicable SLA (Days)</label>
-                    <input type="number" id="applicableSla" placeholder="Timeline constraints" min="1">
-                </div>
-                <div class="form-group">
-                    <label for="completionDate">Actual Completion Date</label>
-                    <input type="date" id="completionDate">
-                </div>
-                <div class="form-group">
-                    <label for="reasonDelay">Reason for Delay</label>
-                    <input type="text" id="reasonDelay" placeholder="Explanatory context notes">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Disciplinary Case Management System</h1>
+                    <p class="text-xs text-indigo-200">Track, monitor, and manage case registers and SLAs in real-time</p>
                 </div>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" id="btnCancelEdit" class="btn btn-secondary" style="display: none;">Cancel Edit</button>
-                <button type="submit" id="btnSubmitForm" class="btn btn-primary">Add Case to Register</button>
+            
+            <!-- Connection Status -->
+            <div class="flex items-center space-x-3">
+                <div id="connectionStatus" class="flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-full text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="connectionText">Offline Local Storage Mode</span>
+                </div>
+                <button onclick="toggleConfigPanel()" class="bg-white/10 hover:bg-white/20 text-white transition px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 border border-white/15">
+                    <i class="fa-solid fa-gear"></i> Database Settings
+                </button>
             </div>
-        </form>
-    </div>
-    <div class="action-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="Search by Employee, Case No, Department or Allegation...">
-    </div>
-    <div class="table-container">
-        <table id="registerTable">
-            <thead>
-                <tr>
-                    <th style="min-width: 120px;">Actions</th>
-                    <th>Case No.</th>
-                    <th>Employee / Reference</th>
-                    <th>Department</th>
-                    <th>Date Reported</th>
-                    <th>Type of Offence</th>
-                    <th>Nature of Allegation</th>
-                    <th>Responsible Officer</th>
-                    <th>Current Stage</th>
-                    <th>Date Stage Commenced</th>
-                    <th>Applicable SLA</th>
-                    <th>Due Date</th>
-                    <th>Actual Completion Date</th>
-                    <th>Days Elapsed</th>
-                    <th>Status</th>
-                    <th>Delay Days</th>
-                    <th>Reason for Delay</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        
+        <!-- Supabase Configuration Panel (Collapsible) -->
+        <section id="configPanel" class="hidden mb-8 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300">
+            <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-indigo-600"></i> Cloud Database Setup (Supabase)
+                </h2>
+                <button onclick="toggleConfigPanel()" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-600 mb-4">
+                    To make this system accessible to everyone who has this link and save edits/inserts in real-time, connect it to a free <strong>Supabase</strong> PostgreSQL database. Once configured, data is loaded and updated instantly for all users.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="supabaseUrl" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Supabase Project URL</label>
+                        <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co" class="w-full text-sm border border-slate-200 rounded-lg px-3.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label for="supabaseKey" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Supabase Anon Key</label>
+                        <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsIn..." class="w-full text-sm border border-slate-200 rounded-lg px-3.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-xs text-slate-500">
+                        Credentials entered below are saved to your local browser session. You can also hardcode them directly inside the HTML file.
+                    </span>
+                    <div class="flex gap-2">
+                        <button onclick="clearCloudConfig()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Clear Config</button>
+                        <button onclick="saveCloudConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-lg transition shadow-sm">Save & Connect</button>
+                    </div>
+                </div>
+                
+                <!-- Database Setup Code Accordion -->
+                <details class="mt-4 border-t border-slate-100 pt-4 text-xs">
+                    <summary class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer outline-none">How to set up the database in Supabase (SQL Script)</summary>
+                    <div class="mt-2 bg-slate-900 text-slate-300 p-3.5 rounded-lg font-mono leading-relaxed overflow-x-auto select-all">
+-- 1. Create the table in your Supabase SQL Editor
+CREATE TABLE disciplinary_cases (
+    id TEXT PRIMARY KEY,
+    emp TEXT NOT NULL,
+    dept TEXT,
+    reported DATE,
+    type TEXT,
+    "desc" TEXT,
+    owner TEXT,
+    stage TEXT,
+    s_date DATE,
+    sla INT,
+    comp DATE,
+    reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 2. Enable public read and write access
+ALTER TABLE disciplinary_cases ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Access Policy" ON disciplinary_cases
+    AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- Metrics Dashboard Summary Card -->
+        <section class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm flex items-center space-x-3.5">
+                <div class="bg-indigo-50 text-indigo-600 p-3 rounded-lg"><i class="fa-solid fa-folder-open text-lg"></i></div>
+                <div>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Cases</span>
+                    <span id="metricTotal" class="text-2xl font-bold text-slate-800">0</span>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm flex items-center space-x-3.5">
+                <div class="bg-blue-50 text-blue-600 p-3 rounded-lg"><i class="fa-solid fa-spinner text-lg"></i></div>
+                <div>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Active</span>
+                    <span id="metricActive" class="text-2xl font-bold text-slate-800">0</span>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm flex items-center space-x-3.5">
+                <div class="bg-emerald-50 text-emerald-600 p-3 rounded-lg"><i class="fa-solid fa-circle-check text-lg"></i></div>
+                <div>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Closed</span>
+                    <span id="metricClosed" class="text-2xl font-bold text-slate-800">0</span>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm flex items-center space-x-3.5">
+                <div class="bg-rose-50 text-rose-600 p-3 rounded-lg"><i class="fa-solid fa-circle-exclamation text-lg animate-pulse"></i></div>
+                <div>
+                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Overdue / Red</span>
+                    <span id="metricOverdue" class="text-2xl font-bold text-slate-800">0</span>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm col-span-2 lg:col-span-1 flex items-center space-x-3.5">
+                <div class="bg-amber-50 text-amber-600 p-3 rounded-lg"><i class="fa-solid fa-chart-line text-lg"></i></div>
+                <div class="flex-grow">
+                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">SLA Compliance</span>
+                    <div class="flex items-baseline space-x-1.5">
+                        <span id="metricCompliance" class="text-2xl font-bold text-slate-800">100%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            
+            <!-- Left Panel: Form Section -->
+            <section class="xl:col-span-1">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm sticky top-6 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
+                        <h2 id="formHeader" class="text-md font-semibold text-slate-800 font-bold">Log New Disciplinary Case</h2>
+                    </div>
+                    <form id="caseForm" class="p-5 space-y-4 text-sm">
+                        <input type="hidden" id="editRowIndex">
+                        
+                        <div>
+                            <label for="caseNo" class="block font-medium text-slate-600 mb-1">Case No / Reference ID <span class="text-red-500">*</span></label>
+                            <input type="text" id="caseNo" required placeholder="e.g. CASE-001" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="employee" class="block font-medium text-slate-600 mb-1">Employee Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="employee" required placeholder="e.g. John Doe" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="department" class="block font-medium text-slate-600 mb-1">Department</label>
+                            <input type="text" id="department" placeholder="e.g. Finance" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="dateReported" class="block font-medium text-slate-600 mb-1">Date Reported</label>
+                            <input type="date" id="dateReported" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="typeOffence" class="block font-medium text-slate-600 mb-1">Type of Offence</label>
+                            <input type="text" id="typeOffence" placeholder="e.g. Absenteeism" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="natureAllegation" class="block font-medium text-slate-600 mb-1">Nature of Allegation <span class="text-red-500">*</span></label>
+                            <textarea id="natureAllegation" required rows="3" placeholder="Describe the details..." class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition resize-none"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="officer" class="block font-medium text-slate-600 mb-1">Hearing Officer / Owner</label>
+                            <input type="text" id="officer" placeholder="e.g. Sarah Jenkins" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="currentStage" class="block font-medium text-slate-600 mb-1">Current Stage</label>
+                            <input type="text" id="currentStage" placeholder="e.g. Investigation" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="dateStageCommenced" class="block font-medium text-slate-600 mb-1">Date Stage Commenced</label>
+                            <input type="date" id="dateStageCommenced" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="applicableSla" class="block font-medium text-slate-600 mb-1">Applicable SLA (Days)</label>
+                            <input type="number" id="applicableSla" min="0" placeholder="e.g. 30" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="completionDate" class="block font-medium text-slate-600 mb-1">Completion Date</label>
+                            <input type="date" id="completionDate" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="reasonDelay" class="block font-medium text-slate-600 mb-1">Reason for Delay</label>
+                            <input type="text" id="reasonDelay" placeholder="Describe reasons..." class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <div class="flex flex-col gap-2 pt-2">
+                            <button type="submit" id="btnSubmitForm" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition">Add Case to Register</button>
+                            <button type="button" id="btnCancelEdit" class="hidden w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-lg transition text-center">Cancel Editing</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Panel: Grid & Table Section -->
+            <section class="xl:col-span-3 space-y-6">
+                <!-- Search & Filters -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="relative w-full md:w-96">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="Search by case no, employee, dept, allegation..." class="w-full text-xs pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs font-semibold text-slate-500">
+                        <span>Show status:</span>
+                        <select id="statusFilter" class="border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            <option value="All">All Statuses</option>
+                            <option value="Green">Green</option>
+                            <option value="Amber">Amber</option>
+                            <option value="Red">Red</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        <button onclick="refreshData()" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3.5 text-center min-w-[120px]">Actions</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Case No</th>
+                                    <th scope="col" class="px-4 py-3.5">Employee Name</th>
+                                    <th scope="col" class="px-4 py-3.5">Department</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Date Reported</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Type of Offence</th>
+                                    <th scope="col" class="px-4 py-3.5">Nature of Allegation</th>
+                                    <th scope="col" class="px-4 py-3.5">Officer / Owner</th>
+                                    <th scope="col" class="px-4 py-3.5">Current Stage</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Commenced</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">SLA (Days)</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Due Date</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Completed</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Elapsed</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Status</th>
+                                    <th scope="col" class="px-4 py-3.5 text-center">Delay (Days)</th>
+                                    <th scope="col" class="px-4 py-3.5">Reason for Delay</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noDataView" class="hidden py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                        <i class="fa-regular fa-folder-open text-4xl"></i>
+                        <p class="font-medium text-sm">No disciplinary cases matching criteria found.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-500 py-6 border-t border-slate-800 text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>© 2026 Disciplinary Case Management System. Shared Live Database Solution.</p>
+        </div>
+    </footer>
+
+    <!-- System JavaScript -->
     <script>
-        let registerDatabase = [
-            {id: "a", emp: "U.V.S.D.Jayarathne (8230)", dept: "Operations", reported: "", type: "Major", desc: "Misappropriation of collected premium Rs. 464,786.44", owner: "CLO / CHRO", stage: "Closure Verification", s_date: "2026-07-24", sla: "", comp: "", reason: "Pending final confirmation from HIA"},
-            {id: "b", emp: "K.Vijayadhasan (8459)", dept: "PI Counter Underwriting - Hatton", reported: "", type: "Major", desc: "Misappropriation of collected Premium Rs. 215,514.76", owner: "CLO", stage: "Escalated to IGP / DIG Nuwara Eliya", s_date: "2026-07-31", sla: "", comp: "", reason: "Awaiting police execution updates"},
-            {id: "c", emp: "Sachinthana Piyasena (8231)", dept: "Rathnapura Regional Branch", reported: "", type: "Major", desc: "Misappropriation of collected Premium - Balance outstanding tracking", owner: "CLO / HR", stage: "Court Case Recovery (No 25/492/3/24)", s_date: "2026-07-03", sla: "", comp: "", reason: "Warrant issued via Police Station Nivithigala; Chethi to confirm gratuity"},
-            {id: "d", emp: "N K Dineth Sachitha (8764)", dept: "Sales Promotion", reported: "", type: "Major", desc: "Document forgery - Code removal and payment holds", owner: "CLO / HIA", stage: "Resigned - Exit Clearance BAC Submission", s_date: "2026-07-23", sla: "", comp: "", reason: "Forwarded to Board Audit Committee by 27th July 2026"},
-            {id: "e", emp: "A.R.T Silva (8581)", dept: "Administration", reported: "", type: "Minor", desc: "Misappropriation of Company Property (Official phone lines for personal overseas calls to Italy) - Rs.112,061.60", owner: "CLO / HIA", stage: "Recommended for Closure", s_date: "2026-07-31", sla: "", comp: "", reason: "Perpetrator out of country; awaiting BAC minute execution approval"},
-            {id: "f", emp: "HTP Sandaruwan (9924)", dept: "Embilipitiya Regional Branch", reported: "2026-02-13", type: "Major", desc: "Fact Finding Review Report on suspected fraudulent motor insurance claim", owner: "CLO", stage: "Reviewing legal opinion on lack of admissible evidence", s_date: "2026-08-07", sla: "", comp: "", reason: "MBSL source photo constraint prevents direct police disclosure"},
-            {id: "h", emp: "M R K Jayarathna (9592)", dept: "Fire & Misc", reported: "2026-02-27", type: "Major", desc: "Customer complaint regarding unconsented placement of policy under broker code", owner: "CLO", stage: "Closed", s_date: "2026-06-09", sla: "", comp: "2026-06-09", reason: "Resigned w.e.f 4th July 2026. Warning issued and HIA notified"},
-            {id: "o", emp: "Ms Asanga Opatha (9354) - Case 11", dept: "Administration", reported: "2026-04-10", type: "Minor", desc: "Professional Negligence: Failure to provide net book value of 24 unreturned tablets to Finance", owner: "CHRO / Finance", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "j", emp: "A.D.K.N. Dasanayaka (800216)", dept: "Kuliyapitiya Regional Branch", reported: "2026-04-10", type: "Major", desc: "Contact Centre KPI tracking - Misappropriated premiums on cancelled policies total Rs. 40,109.00", owner: "CLO / Contact Centre", stage: "Legal Action Follow-up Review", s_date: "2026-08-03", sla: "", comp: "", reason: "Salary held; call records and file passed to CLO for legal filing"},
-            {id: "L", emp: "W.A.K.D. Karunarathna (9182)", dept: "Gampaha Branch", reported: "2026-03-20", type: "Major", desc: "Premium misappropriation - Returned policy cheques and excess account tracking verification", owner: "CLO / Finance / MUW", stage: "Closed", s_date: "2026-05-19", sla: "", comp: "2026-05-19", reason: "Amounts fully set off into new policies; HIA notified for closure"},
-            {id: "M", emp: "Thilina Thennakoon (8517)", dept: "Pilimathalawa Regional Branch", reported: "2025-10-01", type: "Major", desc: "Customer malpractice complaint regarding alloy wheel repair arrangement profiling", owner: "CLO / Finance", stage: "Closed - Forwarded to HIA for Audit Committee", s_date: "2026-05-11", sla: "", comp: "2026-05-11", reason: "Salary deductions completed and credited to miscellaneous income GL account"},
-            {id: "n", emp: "Ms Asanga Opatha (9354) - Case 1", dept: "Administration", reported: "2026-04-10", type: "Minor", desc: "Professional Negligence: Unbudgeted purchase of 2000 memo cubes (Rs. 1,440,000) without upfront OMC approval", owner: "DC (CHRO)", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "11", comp: "2026-05-15", reason: "Merged into multi-count warning framework"},
-            {id: "q", emp: "Ms Asanga Opatha (9354) - Case 2", dept: "Administration", reported: "2026-04-24", type: "Minor", desc: "Professional Negligence: Professional dispute with Ms. Nahaziya regarding Melisiripura PLC staff relocation", owner: "CHRO", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "", comp: "2026-05-15", reason: "Merged into multi-count warning framework"},
-            {id: "S", emp: "Ms Asanga Opatha (9354) - Case 3", dept: "Administration", reported: "2026-04-26", type: "Minor", desc: "Professional Negligence: Unstable iPad internet connection execution for Director Nayangani Wickramasinghe", owner: "Disciplinary Committee", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "", comp: "2026-05-15", reason: "Merged into multi-count warning framework"},
-            {id: "t", emp: "Ms Asanga Opatha (9354) - Case 4", dept: "Administration", reported: "2026-04-30", type: "Minor", desc: "Professional Negligence: Erroneous Fixed Asset Disposal Board Paper entries without IT consent", owner: "CHRO", stage: "Severe Warning Issued on 15th May 2026", s_date: "2026-05-15", sla: "", comp: "2026-05-15", reason: "Merged into multi-count warning framework"}
-        ];
-        let databasePart2 = [
-            {id: "T", emp: "R. E. Prasly (9733) / Chanuka (800037)", dept: "Fire & Misc / Finance", reported: "2026-04-28", type: "Major", desc: "M/S JETTS ENGINEERING (PVT) LTD premium cheque settled against wrong customer accounts", owner: "CHRO / CLO", stage: "LOD tracking processing for Chanuka", s_date: "2026-05-15", sla: "6", comp: "", reason: "Prasly and Chanuka already resigned; non-motor verification complete"},
-            {id: "u", emp: "Ms Asanga Opatha (9354) - Case 5", dept: "Administration", reported: "2026-04-29", type: "Minor", desc: "Professional Negligence: Failed to process Rs. 120,000 payment to registered supplier Feather Print causing documentation delays", owner: "CEO / DC Committee", stage: "Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Awaiting formal feedback after extension request"},
-            {id: "v", emp: "Ms Asanga Opatha (9354) - Case 6", dept: "Administration", reported: "2026-04-29", type: "Minor", desc: "Professional Negligence: Long outstanding pending advance settlements for Malsiripura Partition Job", owner: "CFO / DC Committee", stage: "Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Awaiting formal feedback after extension request"},
-            {id: "w", emp: "W.A.D.K. Wijesinghe (8304)", dept: "Kurunegala Regional Branch", reported: "2025-12-01", type: "Major", desc: "Unethical business placement under Brillianz Broker Code instead of direct Assetline Broker network", owner: "CHRO", stage: "Letter of Caution Sent on 8th July 2026", s_date: "2026-07-08", sla: "", comp: "2026-07-08", reason: "One month fixed bonus deducted for year 2026"},
-            {id: "y", emp: "Ms Asanga Opatha (9354) - Case 7", dept: "Administration", reported: "2026-05-13", type: "Minor", desc: "Professional Negligence: Failure to submit proposal for replacement of broken head office chairs and interference in other duties", owner: "CHRO", stage: "2nd Show Cause Notice Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "z", emp: "Pradeep Dissanayake (9278)", dept: "Gampaha Zone", reported: "2026-05-13", type: "Major", desc: "Tracking booking logs without user ID codes across specific motor underwriting assets", owner: "DC / CHRO", stage: "Procedural Case Removed; Demoted due to Poor Performance", s_date: "2026-08-05", sla: "", comp: "2026-07-31", reason: "Demoted to Portfolio Manager effective 1st Aug 2026 with 2-month branch relocation target setup"},
-            {id: "Aa", emp: "U.H.J.S.Uduwaka (800421)", dept: "Nawalapitiya Regional Branch", reported: "2026-05-19", type: "Major", desc: "Premium misconduct, manufacturing unauthorized card printouts and premium misappropriation tracking (Rs. 150,000 via slips)", owner: "CHRO / HOO", stage: "System Access Cancelled; Under Review", s_date: "2026-08-24", sla: "10", comp: "", reason: "Access deactivated on 24th Aug 2026 following new complaint from customer Ajith Priyadarshana"},
-            {id: "Ab", emp: "Ms Asanga Opatha (9354) - Case 8", dept: "Administration", reported: "2026-05-28", type: "Minor", desc: "Professional Negligence: Missed deadlines for total SIM card inventories and data bill completion records", owner: "CHRO", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ac", emp: "Ms Asanga Opatha (9354) - Case 9", dept: "Administration", reported: "2026-05-28", type: "Minor", desc: "Professional Negligence: Failed to execute new vendor procurement matrix criteria required by DMU guidelines", owner: "DMU / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ad", emp: "Ms Asanga Opatha (9354) - Case 10", dept: "Administration", reported: "2026-05-29", type: "Minor", desc: "Professional Negligence: Disobeying direct orders to outline operational functions of individual administrative staff components", owner: "CFO / CHRO", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "6", comp: "", reason: "Extended deadline to 9th July missed"},
-            {id: "Ae", emp: "Bad Debts Write-off 2022 Tracking", dept: "Credit Committee", reported: "2026-07-03", type: "Minor", desc: "IRD tax return query regarding confirmation of legal recovery workflows before write-off profiling", owner: "CFO", stage: "Drafting pre-request structural requirements", s_date: "2026-07-03", sla: "", comp: "", reason: "Preventative documentation frameworks under setup"},
-            {id: "Af", emp: "Duwage Sasika Ayesh Perera (9281)", dept: "Rathnapura Regional Branch", reported: "2026-06-11", type: "Minor", desc: "Omission of damaged Growatt Hybrid Inverter serial numbers from policy system data causing claims leakage", owner: "CHRO", stage: "Letter of Caution Executed", s_date: "2026-07-09", sla: "6", comp: "2026-07-03", reason: "No fraudulent intent detected; cautionary notification served"},
-            {id: "Ag", emp: "Rashmi Sachindra (800025)", dept: "Corporate Regional Branch", reported: "2026-06-12", type: "Minor", desc: "Issuing inbound travel insurance package to unauthorized local asset holder following airport document loss claim", owner: "CHRO", stage: "Soft Warning Sent; Product Training Mandated", s_date: "2026-07-09", sla: "6", comp: "2026-07-03", reason: "Oversight admitted; targeted retraining assigned"},
-            {id: "Ah", emp: "H.I.Kapugoda (800338)", dept: "Kandy Regional Branch", reported: "2026-06-19", type: "Major", desc: "Forgery of Nations Trust Bank authorized officer rubber seal stamp layout on proposal docs and Rs. 50,700 misappropriation", owner: "CLO / CHRO", stage: "Terminated w.e.f 26th June 2026; Case Closed", s_date: "2026-07-31", sla: "", comp: "2026-07-26", reason: "Police entry filed at Cinnamon Garden (Ref: CIB II 382/61). Bank deposit proof intercepted"},
-            {id: "Ai", emp: "L.N.M.L. Silva (9780) / Mahesh Silva", dept: "Dehiwala Region", reported: "2026-06-12", type: "Minor", desc: "Violating system proposal signatures guidelines under Cyclone Ditwah data review for client M/s Teagar Tea and Coffee", owner: "CHRO", stage: "Closed", s_date: "2026-07-31", sla: "", comp: "2026-07-08", reason: "Soft warning executed to team leader on 8th July 2026"},
-            {id: "Aj", emp: "U.W.L. Undugoda (8448) / H.H.C.D. Madushani (9186)", dept: "Rathnapura Regional Branch", reported: "2026-06-22", type: "Major", desc: "Issuing unauthorized Flood/CST policy additions to Flavour Symphony schedule despite restrictions", owner: "CHRO", stage: "Closed", s_date: "2026-07-05", sla: "", comp: "2026-07-05", reason: "Warning letters executed to both individual targets on 5th July 2026"}
-        ];
-        registerDatabase = registerDatabase.concat(databasePart2);
-        let databasePart3 = [
-            {id: "Ak", emp: "Rajitha Lal Jayantha (8239)", dept: "Chilaw Branch", reported: "2026-06-24", type: "Major", desc: "Issuing under-quoted premium layout (Rs. 234,070.63) bypass tracking loop without mandatory vehicle checking", owner: "CHRO / DC", stage: "Show Cause Response Received on 7th August 2026", s_date: "2026-08-07", sla: "", comp: "", reason: "Awaiting collective committee review scheduling"},
-            {id: "Al", emp: "Chaminda Ariyarathna (9819)", dept: "Administration", reported: "2026-06-25", type: "Major", desc: "Data Protection Act violations, unauthorized system password transfers, cash reimbursement fraud (Rs. 15,000) and storage asset tracking loops", owner: "CLO / CHRO / HOO", stage: "Resigned - Active Criminal Complaint at Cinnamon Garden PS", s_date: "2026-07-09", sla: "", comp: "", reason: "Resigned 2nd July. Misappropriated cash returned manually via Nethum account loop, police complaint active"},
-            {id: "Am", emp: "Ms Asanga Opatha (9354) - Case 12", dept: "Administration", reported: "2026-07-07", type: "Minor", desc: "Professional Negligence: Internal audit tracking fuel allocation leakage and failure to terminate inactive data dongles of separated staff (Rs. 160,198.36 loss)", owner: "CHRO / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "An", emp: "Ms Asanga Opatha (9354) - Case 13", dept: "Administration", reported: "2026-07-07", type: "Minor", desc: "Professional Negligence: Failure to arrange payment files for door infrastructure repairs at Galle Branch completed via regional staff out-of-pocket tracking", owner: "CHRO / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ao", emp: "Ms Asanga Opatha (9354) - Case 14", dept: "Administration", reported: "2026-07-07", type: "Minor", desc: "Professional Negligence: Failure to meet administrative update targets for corporate Fixed Asset Registry logs", owner: "CHRO / DC", stage: "2nd Show Cause Issued / Extension Requested", s_date: "2026-07-16", sla: "", comp: "", reason: "Employee requested 14 days extension to reply"},
-            {id: "Ap", emp: "Sales Staff Downgrading Process", dept: "Human Resources", reported: "2026-07-06", type: "Minor", desc: "DC Authorization workflows tracking low performers evaluation metrics following formal PIP runs", owner: "CHRO", stage: "Active Review Matrix Integration", s_date: "2026-08-05", sla: "", comp: "", reason: "CHRO mapping out initiatives per structural performance targets"},
-            {id: "Aq", emp: "Ms Asanga Opatha (9354) - Case 15 & 16", dept: "Administration", reported: "2026-07-09", type: "Major", desc: "Professional Negligence: Backlog in processing corporate stamps and blocking delivery files for printed business cards (Umesha Weerasinghe)", owner: "CHRO / CFO", stage: "Demoted to Manager - Administration effective 1st Aug 2026", s_date: "2026-08-12", sla: "", comp: "2026-08-12", reason: "Demoted following 12th Aug inquiry. Security and janitorial reporting channels withdrawn and re-routed to HR"},
-            {id: "Ar", emp: "J.K.P Manoj Mithuranga (8504)", dept: "Homagama Regional Branch", reported: "2026-07-09", type: "Major", desc: "Generating broker code profiles (Mercantile Fortunes) without mandatory signed broker request forms", owner: "MUW / DC", stage: "Tracking Premium Source Origins", s_date: "2026-08-25", sla: "", comp: "", reason: "Motor Underwriting department checking premium origin logs"},
-            {id: "As", emp: "R.A.K. Viduranga (Kasun 9945)", dept: "Maharagama Regional Branch", reported: "2026-07-24", type: "Major", desc: "Premium misappropriation: Collecting Rs. 65,000 via personal bank transfer loop on policy 5M9VCP000001855 causing cancellation", owner: "CHRO / DC", stage: "Awaiting Committee Review of Show Cause Explanation", s_date: "2026-08-06", sla: "7", comp: "", reason: "Show cause reply received on 6th Aug; records check indicates partial admission of Rs. 40,000"},
-            {id: "At", emp: "A.A.C.M. Peiris (Chathura 9953)", dept: "Maharagama Regional Branch", reported: "2026-07-14", type: "Major", desc: "Extensive multiple premium misappropriations totaling Rs. 916,490.57 across 14 checked account files (e.g. Gomas, Perera)", owner: "CLO / CHRO / HOO", stage: "Suspended; Cinnamon Garden Crime Division Case Pending", s_date: "2026-08-20", sla: "6", comp: "", reason: "Failed to fulfill extended repayment deadline on 19th Aug. CLO filing structural entries at Fraud Bureau"},
-            {id: "Au", emp: "Dilum Pathirana (9950)", dept: "Nugegoda Branch", reported: "2026-07-22", type: "Major", desc: "Premium allocation rolling fraud: Diverting client Lal's premium cheque (Rs. 82,489.94) into client Keerthirathna's account", owner: "CHRO", stage: "Reinstated via Payment; Increments and Promotions Frozen", s_date: "2026-07-24", sla: "3", comp: "2026-07-24", reason: "Policy reinstated via cash injection on 24th July. Disciplinary structural holds applied for entire 2026 period"},
-            {id: "Av", emp: "M.L.A.I.H. Molligoda (8160)", dept: "Counter Underwriting / Branch Ops", reported: "2025-11-25", type: "Major", desc: "Defaulted vehicle staff loans outstanding total Rs. 2,139,383 leading to Vacation of Post", owner: "CLO / Finance", stage: "LOD Confirmed; Preparing Court Filing", s_date: "2026-08-25", sla: "3", comp: "", reason: "Filing targeted for court submission before end of August 2026. CR books verified for vehicle assets repossession"},
-            {id: "Aw", emp: "Disciplinary Framework - Demotions Policy", dept: "Operations / HR", reported: "2026-07-31", type: "Minor", desc: "Reviewing institutional implementation matrix for down-grading tracking structures on persistent under-performers", owner: "CHRO", stage: "Finalizing August 2026 Target Review Lists", s_date: "2026-08-25", sla: "3", comp: "2026-08-03", reason: "3-tier structural notification policy mapped; integration ongoing with Sanuri"},
-            {id: "Ax", emp: "S. Anthoni (9731) - Case 52", dept: "Barberyn Reef Resort Portfolio", reported: "2025-09-08", type: "Major", desc: "Massive premium rolling misappropriation totaling Rs. 5,179,608.30 confirmed by internal audit", owner: "CLO / Internal Audit", stage: "Active Fraud Investigation Bureau (FIB) Proceedings", s_date: "2026-08-25", sla: "", comp: "", reason: "LOD issued; criminal cases active at Cinnamon Gardens Police and FIB tracking networks"},
-            {id: "Ay", emp: "G.M.M. Jayasekara (8662)", dept: "Southern Regional Branch", reported: "2025-10-15", type: "Minor", desc: "Contractual breach via publication of defamatory content during YouTube media interview", owner: "CLO / External Counsel", stage: "Plaint Filed in Court; Pre-trial Scheduled", s_date: "2026-08-25", sla: "", comp: "", reason: "External counsel Manoli Jinadasa confirmed pre-trial window assigned for 30th Sept 2026"},
-            {id: "Az", emp: "Manjula Jayasinghe (9907)", dept: "Colombo Zone", reported: "2025-11-01", type: "Major", desc: "Recovery tracking loan balance of Rs. 5,578,134.00 following constructive termination dispute", owner: "DC Committee", stage: "Closed - Removed from Active Minutes", s_date: "2026-08-25", sla: "", comp: "2026-08-10", reason: "Full settlement received on 10th Aug 2026; LT case withdrawn and registration books released"},
-            {id: "Ba", emp: "Dilshan T (9370)", dept: "Sales Department", reported: "2026-08-07", type: "Major", desc: "Sudden data tracking evasion, skipping clearance and outstanding policy balance verification under Vacation of Post", owner: "CLO", stage: "LOD Preparation Stage", s_date: "2026-08-25", sla: "7", comp: "", reason: "LOD execution pending check on precise monetary calculations; May 2025 retention cash safe"},
-            {id: "Bb", emp: "L.B.M.Gunawardhana (Bihansa 800109)", dept: "Contact Centre", reported: "2026-08-12", type: "Major", desc: "Breaching internal data security systems by capturing and sharing confidential client details to external channels", owner: "CHRO", stage: "Termination Processing Pipeline", s_date: "2026-08-25", sla: "3", comp: "", reason: "Suspended 17th Aug. No explanation submitted within show cause boundaries; termination scheduled by 28th Aug"},
-            {id: "Bc", emp: "Hashan Nishshanka (9598)", dept: "Wariyapola Regional Branch", reported: "2026-08-05", type: "Major", desc: "Withholding outstanding marine premiums of LKR 130,699.86 across 17 policies bypassed outside Assetline Brokers", owner: "CHRO", stage: "Show Cause Issuance Phase", s_date: "2026-08-25", sla: "3", comp: "", reason: "Show cause order scheduled for delivery by 28th Aug 2026 to track online data transfers justification"},
-            {id: "Bd", emp: "S.A.D.P.C. Samarathunga (Chandika 9835)", dept: "Kuliyapitiya Regional Branch", reported: "2026-08-20", type: "Major", desc: "Premium misappropriation: Collecting cash at customer home on 29th April (Rs. 37,417.00) followed by unauthorized rolling cancel blocks", owner: "CHRO", stage: "Show Cause Issuance Phase", s_date: "2026-08-25", sla: "3", comp: "", reason: "Show cause scheduled for delivery by 28th Aug 2026 based on 3CX call log validations"}
-        ];
-        registerDatabase = registerDatabase.concat(databasePart3);
-        function calculateMetrics(caseData) {
+        // --- 1. CONFIGURATION AND STATE MANAGEMENT ---
+        let registerDatabase = [];
+        let supabaseClient = null;
+
+        // HARDCODED CREDENTIAL OPTION (Highly recommended for sharing directly)
+        // Enter your project details here to automatically connect any user who opens the file:
+        const HARDCODED_SUPABASE_URL = "";
+        const HARDCODED_SUPABASE_KEY = "";
+
+        function getCloudConfig() {
+            if (HARDCODED_SUPABASE_URL && HARDCODED_SUPABASE_KEY) {
+                return { url: HARDCODED_SUPABASE_URL, key: HARDCODED_SUPABASE_KEY };
+            }
+            return {
+                url: localStorage.getItem("db_supabase_url") || "",
+                key: localStorage.getItem("db_supabase_key") || ""
+            };
+        }
+
+        function initDatabase() {
+            const config = getCloudConfig();
+            const statusIndicator = document.getElementById("connectionStatus");
+            const statusText = document.getElementById("connectionText");
+
+            document.getElementById("supabaseUrl").value = localStorage.getItem("db_supabase_url") || "";
+            document.getElementById("supabaseKey").value = localStorage.getItem("db_supabase_key") || "";
+
+            if (config.url && config.key) {
+                try {
+                    supabaseClient = supabase.createClient(config.url, config.key);
+                    statusIndicator.className = "flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-3 py-1.5 rounded-full text-xs font-semibold";
+                    statusText.innerText = "Live Connected (Supabase Cloud)";
+                    console.log("Successfully connected to Supabase Cloud.");
+                } catch (e) {
+                    console.error("Initialization of Supabase failed:", e);
+                    fallbackToLocal();
+                }
+            } else {
+                fallbackToLocal();
+            }
+            loadData();
+        }
+
+        function fallbackToLocal() {
+            supabaseClient = null;
+            const statusIndicator = document.getElementById("connectionStatus");
+            const statusText = document.getElementById("connectionText");
+            statusIndicator.className = "flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-full text-xs font-semibold";
+            statusText.innerText = "Offline Local Storage Mode";
+        }
+
+        function saveCloudConfig() {
+            const url = document.getElementById("supabaseUrl").value.trim();
+            const key = document.getElementById("supabaseKey").value.trim();
+
+            if (!url || !key) {
+                alert("Please fill in both the URL and the Anon Key.");
+                return;
+            }
+
+            localStorage.setItem("db_supabase_url", url);
+            localStorage.setItem("db_supabase_key", key);
+            initDatabase();
+            toggleConfigPanel();
+        }
+
+        function clearCloudConfig() {
+            localStorage.removeItem("db_supabase_url");
+            localStorage.removeItem("db_supabase_key");
+            document.getElementById("supabaseUrl").value = "";
+            document.getElementById("supabaseKey").value = "";
+            fallbackToLocal();
+            loadData();
+        }
+
+        function toggleConfigPanel() {
+            const panel = document.getElementById("configPanel");
+            panel.classList.toggle("hidden");
+        }
+
+
+        // --- 2. METRICS CALCULATION ENGINE ---
+        function calculateMetrics(c) {
             const today = new Date();
-            const hasReportedDate = caseData.reported && caseData.reported !== "";
-            const dateReported = hasReportedDate ? new Date(caseData.reported) : null;
-            const slaDays = caseData.sla && caseData.sla !== "" ? parseInt(caseData.sla) : null;
+            today.setHours(0,0,0,0);
+            
+            let daysElapsed = "-";
+            let status = "Green";
             let dueDateString = "-";
+            let delayDays = 0;
             let dueDate = null;
-            if (hasReportedDate && !isNaN(dateReported.getTime()) && slaDays !== null) {
-                dueDate = new Date(dateReported);
-                dueDate.setDate(dueDate.getDate() + slaDays);
+
+            // 1. Calculate Days Elapsed since stage commenced
+            if (c.s_date) {
+                const startDate = new Date(c.s_date);
+                startDate.setHours(0,0,0,0);
+                const endDate = c.comp ? new Date(c.comp) : today;
+                endDate.setHours(0,0,0,0);
+                const diffTime = endDate.getTime() - startDate.getTime();
+                daysElapsed = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+            }
+
+            // 2. Calculate Due Date (Reported Date + SLA Days) and Delay Days
+            if (c.reported && c.sla && !isNaN(parseInt(c.sla))) {
+                const reportedDate = new Date(c.reported);
+                reportedDate.setHours(0,0,0,0);
+                
+                dueDate = new Date(reportedDate);
+                dueDate.setDate(reportedDate.getDate() + parseInt(c.sla));
+                
                 const yyyy = dueDate.getFullYear();
                 const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
                 const dd = String(dueDate.getDate()).padStart(2, '0');
                 dueDateString = `${yyyy}-${mm}-${dd}`;
+
+                const completionOrToday = c.comp ? new Date(c.comp) : today;
+                completionOrToday.setHours(0,0,0,0);
+
+                if (completionOrToday > dueDate) {
+                    const delayTime = completionOrToday.getTime() - dueDate.getTime();
+                    delayDays = Math.max(0, Math.floor(delayTime / (1000 * 60 * 60 * 24)));
+                }
             }
-            let daysElapsed = "-";
-            if (hasReportedDate && !isNaN(dateReported.getTime())) {
-                const endDate = caseData.comp && caseData.comp !== "" ? new Date(caseData.comp) : today;
-                const timeDiff = endDate.getTime() - dateReported.getTime();
-                daysElapsed = !isNaN(timeDiff) ? Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24))) : "-";
-            }
-            let status = "Green";
-            let delayDays = 0;
-            if (caseData.comp && caseData.comp !== "") {
+
+            // 3. Status Badge Determination
+            if (c.comp) {
                 status = "Closed";
-                if (dueDate) {
-                    const completionDate = new Date(caseData.comp);
-                    if (completionDate > dueDate) {
-                        const delayDiff = completionDate.getTime() - dueDate.getTime();
-                        delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
-                    }
-                }
-            } else if (dueDate && !isNaN(dueDate.getTime())) {
-                const systemToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const targetedDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-                if (systemToday > targetedDue) {
+            } else if (dueDate) {
+                if (today > dueDate) {
                     status = "Red";
-                    const delayDiff = systemToday.getTime() - targetedDue.getTime();
-                    delayDays = Math.max(0, Math.floor(delayDiff / (1000 * 60 * 60 * 24)));
                 } else {
-                    const trackingDiff = targetedDue.getTime() - systemToday.getTime();
-                    const daysRemaining = Math.floor(trackingDiff / (1000 * 60 * 60 * 24));
-                    if (daysRemaining <= 5) {
+                    const fiveDaysFromNow = new Date(today);
+                    fiveDaysFromNow.setDate(today.getDate() + 5);
+                    if (fiveDaysFromNow >= dueDate) {
                         status = "Amber";
+                    } else {
+                        status = "Green";
                     }
                 }
             }
-            return { dueDateString, daysElapsed, status, delayDays };
+
+            return { daysElapsed, status, dueDateString, delayDays };
         }
 
+
+        // --- 3. DATABASE OPERATIONS (READ, WRITE, DELETE) ---
+        async function loadData() {
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('disciplinary_cases')
+                        .select('*')
+                        .order('id', { ascending: true });
+                    
+                    if (error) throw error;
+                    registerDatabase = data || [];
+                } catch (e) {
+                    console.error("Failed to load from Supabase Cloud:", e);
+                    alert("Error loading from live database! Displaying local fallback data instead.");
+                    loadFromLocalStorage();
+                }
+            } else {
+                loadFromLocalStorage();
+            }
+            renderTable(registerDatabase);
+            updateDashboardMetrics();
+        }
+
+        function loadFromLocalStorage() {
+            const dataStr = localStorage.getItem("registerDatabase");
+            registerDatabase = dataStr ? JSON.parse(dataStr) : getSampleData();
+        }
+
+        function saveToLocalStorageOnly() {
+            localStorage.setItem("registerDatabase", JSON.stringify(registerDatabase));
+        }
+
+        async function saveRecord(caseData) {
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('disciplinary_cases')
+                        .upsert([caseData]);
+                    
+                    if (error) throw error;
+                } catch (e) {
+                    console.error("Failed to save to cloud:", e);
+                    alert("Failed to write to database! Please verify your network and credentials.");
+                    return false;
+                }
+            } else {
+                const existingIndex = registerDatabase.findIndex(item => item.id.toLowerCase() === caseData.id.toLowerCase());
+                if (existingIndex !== -1) {
+                    registerDatabase[existingIndex] = caseData;
+                } else {
+                    registerDatabase.push(caseData);
+                }
+                saveToLocalStorageOnly();
+            }
+            await loadData();
+            return true;
+        }
+
+        async function deleteRecord(id) {
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('disciplinary_cases')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                } catch (e) {
+                    console.error("Failed to delete from cloud:", e);
+                    alert("Could not remove case from the cloud database.");
+                    return false;
+                }
+            } else {
+                registerDatabase = registerDatabase.filter(item => item.id !== id);
+                saveToLocalStorageOnly();
+            }
+            await loadData();
+            return true;
+        }
+
+        function getSampleData() {
+            return [
+                {
+                    id: "CASE-001",
+                    emp: "Marcus Vance",
+                    dept: "Logistics",
+                    reported: "2026-08-01",
+                    type: "Absenteeism",
+                    desc: "Repeated unexcused absences over a 2-week period.",
+                    owner: "Evelyn Reed",
+                    stage: "Investigation",
+                    s_date: "2026-08-03",
+                    sla: "15",
+                    comp: "",
+                    reason: ""
+                },
+                {
+                    id: "CASE-002",
+                    emp: "Clara Oswald",
+                    dept: "Customer Support",
+                    reported: "2026-08-10",
+                    type: "Policy Breach",
+                    desc: "Unauthorized disclosure of internal processes to third-party forums.",
+                    owner: "Arthur Dent",
+                    stage: "Completed",
+                    s_date: "2026-08-12",
+                    sla: "20",
+                    comp: "2026-08-25",
+                    reason: ""
+                }
+            ];
+        }
+
+
+        // --- 4. RENDER TABLE AND VIEW FILTERS ---
         function renderTable(dataToRender) {
             const tbody = document.getElementById("tableBody");
+            const noDataView = document.getElementById("noDataView");
             tbody.innerHTML = ""; 
+
+            if (dataToRender.length === 0) {
+                noDataView.classList.remove("hidden");
+                return;
+            } else {
+                noDataView.classList.add("hidden");
+            }
+
             dataToRender.forEach((c) => {
                 const actualIndex = registerDatabase.findIndex(item => item.id === c.id);
                 const metrics = calculateMetrics(c);
                 const row = document.createElement("tr");
-                let statusBadgeClass = "badge-green";
-                if (metrics.status === "Amber") statusBadgeClass = "badge-amber";
-                if (metrics.status === "Red") statusBadgeClass = "badge-red";
-                if (metrics.status === "Closed") statusBadgeClass = "badge-closed";
+                row.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+                let statusBadgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                if (metrics.status === "Amber") statusBadgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
+                if (metrics.status === "Red") statusBadgeClass = "bg-rose-50 text-rose-700 border border-rose-200";
+                if (metrics.status === "Closed") statusBadgeClass = "bg-slate-100 text-slate-600 border border-slate-200";
+
                 row.innerHTML = `
-                    <td class="actions-cell">
-                        <button class="btn btn-edit" onclick="triggerEditRecord(${actualIndex})">Edit</button>
-                        <button class="btn btn-delete" onclick="triggerDeleteRecord(${actualIndex})">Remove</button>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <button class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold px-2.5 py-1 rounded-md transition text-xs mr-1 cursor-pointer" onclick="triggerEditRecord(${actualIndex})">Edit</button>
+                        <button class="bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold px-2.5 py-1 rounded-md transition text-xs cursor-pointer" onclick="triggerDeleteRecord('${c.id}')">Remove</button>
                     </td>
-                    <td class="text-center" style="font-weight: bold;">${c.id}</td>
-                    <td class="text-left">${c.emp}</td>
-                    <td class="text-left">${c.dept || '-'}</td>
-                    <td class="text-center">${c.reported || '-'}</td>
-                    <td class="text-center">${c.type || '-'}</td>
-                    <td class="text-left">${c.desc}</td>
-                    <td class="text-left">${c.owner || '-'}</td>
-                    <td class="text-left">${c.stage || '-'}</td>
-                    <td class="text-center">${c.s_date || '-'}</td>
-                    <td class="text-center">${c.sla || '-'}</td>
-                    <td class="text-center" style="font-weight: 500;">${metrics.dueDateString}</td>
-                    <td class="text-center">${c.comp || '-'}</td>
-                    <td class="text-center">${metrics.daysElapsed}</td>
-                    <td class="text-center"><span class="badge ${statusBadgeClass}">${metrics.status}</span></td>
-                    <td class="text-center" style="${metrics.delayDays > 0 ? 'color: red; font-weight: bold;' : ''}">${metrics.delayDays}</td>
-                    <td class="text-left">${c.reason || '-'}</td>
+                    <td class="px-4 py-3 text-center font-bold text-slate-800">${c.id}</td>
+                    <td class="px-4 py-3 font-semibold text-slate-800">${c.emp}</td>
+                    <td class="px-4 py-3">${c.dept || '-'}</td>
+                    <td class="px-4 py-3 text-center">${c.reported || '-'}</td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">${c.type || '-'}</td>
+                    <td class="px-4 py-3 max-w-xs truncate" title="${c.desc}">${c.desc}</td>
+                    <td class="px-4 py-3">${c.owner || '-'}</td>
+                    <td class="px-4 py-3">${c.stage || '-'}</td>
+                    <td class="px-4 py-3 text-center">${c.s_date || '-'}</td>
+                    <td class="px-4 py-3 text-center">${c.sla || '-'}</td>
+                    <td class="px-4 py-3 text-center font-semibold text-slate-600">${metrics.dueDateString}</td>
+                    <td class="px-4 py-3 text-center">${c.comp || '-'}</td>
+                    <td class="px-4 py-3 text-center">${metrics.daysElapsed}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadgeClass}">
+                            ${metrics.status}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center font-bold ${metrics.delayDays > 0 ? 'text-red-500' : 'text-slate-400'}">${metrics.delayDays}</td>
+                    <td class="px-4 py-3 max-w-xs truncate" title="${c.reason || ''}">${c.reason || '-'}</td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
-        document.getElementById("searchInput").addEventListener("input", function(e) {
-            const query = e.target.value.toLowerCase().trim();
-            const filteredData = registerDatabase.filter(item => 
-                item.id.toLowerCase().includes(query) || 
-                item.emp.toLowerCase().includes(query) || 
-                (item.dept && item.dept.toLowerCase().includes(query)) ||
-                item.desc.toLowerCase().includes(query)
-            );
-            renderTable(filteredData);
-        });
+        function applyFilters() {
+            const query = document.getElementById("searchInput").value.toLowerCase().trim();
+            const statusFilter = document.getElementById("statusFilter").value;
 
+            const filteredData = registerDatabase.filter(item => {
+                const metrics = calculateMetrics(item);
+                const textMatch = 
+                    item.id.toLowerCase().includes(query) || 
+                    item.emp.toLowerCase().includes(query) || 
+                    (item.dept && item.dept.toLowerCase().includes(query)) ||
+                    item.desc.toLowerCase().includes(query);
+
+                const statusMatch = (statusFilter === "All") || (metrics.status === statusFilter);
+                return textMatch && statusMatch;
+            });
+
+            renderTable(filteredData);
+        }
+
+        document.getElementById("searchInput").addEventListener("input", applyFilters);
+        document.getElementById("statusFilter").addEventListener("change", applyFilters);
+
+
+        // --- 5. DASHBOARD SUMMARY ANALYTICS ---
+        function updateDashboardMetrics() {
+            const total = registerDatabase.length;
+            let active = 0;
+            let closed = 0;
+            let overdue = 0;
+            let withinSlaClosedCount = 0;
+
+            registerDatabase.forEach(item => {
+                const metrics = calculateMetrics(item);
+                if (metrics.status === "Closed") {
+                    closed++;
+                    if (metrics.delayDays === 0) {
+                        withinSlaClosedCount++;
+                    }
+                } else {
+                    active++;
+                    if (metrics.status === "Red") {
+                        overdue++;
+                    }
+                }
+            });
+
+            const slaCompliancePct = closed > 0 
+                ? Math.round((withinSlaClosedCount / closed) * 100) 
+                : 100;
+
+            document.getElementById("metricTotal").innerText = total;
+            document.getElementById("metricActive").innerText = active;
+            document.getElementById("metricClosed").innerText = closed;
+            document.getElementById("metricOverdue").innerText = overdue;
+            document.getElementById("metricCompliance").innerText = `${slaCompliancePct}%`;
+        }
+
+
+        // --- 6. FORM & EVENT INTERACTIONS ---
         window.triggerEditRecord = function(index) {
             const targetRecord = registerDatabase[index];
             document.getElementById("editRowIndex").value = index;
             document.getElementById("caseNo").value = targetRecord.id;
+            document.getElementById("caseNo").disabled = true; // Protect primary key from changes
             document.getElementById("employee").value = targetRecord.emp;
             document.getElementById("department").value = targetRecord.dept || "";
             document.getElementById("dateReported").value = targetRecord.reported || "";
@@ -413,62 +708,73 @@
             document.getElementById("applicableSla").value = targetRecord.sla || "";
             document.getElementById("completionDate").value = targetRecord.comp || "";
             document.getElementById("reasonDelay").value = targetRecord.reason || "";
+            
             document.getElementById("formHeader").innerText = "Modify Case Details";
             document.getElementById("btnSubmitForm").innerText = "Save Changes";
-            document.getElementById("btnCancelEdit").style.display = "inline-block";
+            document.getElementById("btnCancelEdit").classList.remove("hidden");
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.triggerDeleteRecord = function(index) {
-            if (confirm(`Confirm permanent removal of Case No: ${registerDatabase[index].id}?`)) {
-                registerDatabase.splice(index, 1);
-                renderTable(registerDatabase);
-                clearFormState();
+        window.triggerDeleteRecord = async function(id) {
+            if (confirm(`Confirm permanent removal of Case No: ${id}?`)) {
+                const success = await deleteRecord(id);
+                if (success) {
+                    clearFormState();
+                }
             }
         };
 
         function clearFormState() {
             document.getElementById("caseForm").reset();
             document.getElementById("editRowIndex").value = "";
+            document.getElementById("caseNo").disabled = false;
             document.getElementById("formHeader").innerText = "Log New Disciplinary Case";
             document.getElementById("btnSubmitForm").innerText = "Add Case to Register";
-            document.getElementById("btnCancelEdit").style.display = "none";
+            document.getElementById("btnCancelEdit").classList.add("hidden");
         }
 
         document.getElementById("btnCancelEdit").addEventListener("click", clearFormState);
 
-        document.getElementById("caseForm").addEventListener("submit", function(e) {
+        document.getElementById("caseForm").addEventListener("submit", async function(e) {
             e.preventDefault();
             const targetIndexStr = document.getElementById("editRowIndex").value;
+            
             const caseData = {
                 id: document.getElementById("caseNo").value.trim(),
                 emp: document.getElementById("employee").value.trim(),
-                dept: document.getElementById("department").value.trim(),
-                reported: document.getElementById("dateReported").value,
-                type: document.getElementById("typeOffence").value,
+                dept: document.getElementById("department").value.trim() || null,
+                reported: document.getElementById("dateReported").value || null,
+                type: document.getElementById("typeOffence").value || null,
                 desc: document.getElementById("natureAllegation").value.trim(),
-                owner: document.getElementById("officer").value.trim(),
-                stage: document.getElementById("currentStage").value.trim(),
-                s_date: document.getElementById("dateStageCommenced").value,
-                sla: document.getElementById("applicableSla").value,
-                comp: document.getElementById("completionDate").value,
-                reason: document.getElementById("reasonDelay").value.trim()
+                owner: document.getElementById("officer").value.trim() || null,
+                stage: document.getElementById("currentStage").value.trim() || null,
+                s_date: document.getElementById("dateStageCommenced").value || null,
+                sla: document.getElementById("applicableSla").value ? parseInt(document.getElementById("applicableSla").value) : null,
+                comp: document.getElementById("completionDate").value || null,
+                reason: document.getElementById("reasonDelay").value.trim() || null
             };
-            if (targetIndexStr !== "") {
-                registerDatabase[parseInt(targetIndexStr)] = caseData;
-            } else {
-                if (registerDatabase.some(item => item.id.toLowerCase() === caseData.id.toLowerCase())) {
-                    alert("A disciplinary case with this precise ID number already exists.");
+
+            if (targetIndexStr === "") {
+                const alreadyExists = registerDatabase.some(item => item.id.toLowerCase() === caseData.id.toLowerCase());
+                if (alreadyExists) {
+                    alert("A disciplinary case with this Case No already exists.");
                     return;
                 }
-                registerDatabase.push(caseData);
             }
-            renderTable(registerDatabase);
-            clearFormState();
-            document.getElementById("searchInput").value = ""; 
+
+            const success = await saveRecord(caseData);
+            if (success) {
+                clearFormState();
+                document.getElementById("searchInput").value = ""; 
+                document.getElementById("statusFilter").value = "All";
+            }
         });
 
-        renderTable(registerDatabase);
+        async function refreshData() {
+            await loadData();
+        }
+
+        window.addEventListener("DOMContentLoaded", initDatabase);
     </script>
 </body>
 </html>
